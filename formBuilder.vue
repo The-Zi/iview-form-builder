@@ -6,9 +6,9 @@
  */
 
 <template>
-  <Row>
+  <Row style="height: 2000px;">
     <!-- 构建区域 -->
-    <Col span="18">
+    <Col span="16">
       <!-- 表单基础信息 -->
       <Col class="form-row" span="24">
         <Row>
@@ -68,7 +68,8 @@
 
     <!-- 表单项组件 -->
     <Col span="8">
-      <form-modules @save="getFormData({action:true})" @clear="clearFormData"></form-modules>
+      <iview-form-builder-modules @save="getFormData({action:true})" @clear="clearFormData">
+      </iview-form-builder-modules>
     </Col>
 
     <!-- 增减表单行数 -->
@@ -168,7 +169,7 @@
   // 表单栅格系统
   import formGrid from './formGrid';
   // 表单组件
-  import formModules from './formModules';
+  import iviewFormBuilderModules from './componentes/iviewFormBuilderModules';
 
   export default {
     // 本组件名
@@ -177,7 +178,7 @@
     // 应用组件
     components: {
       formGrid,
-      formModules
+      iviewFormBuilderModules
     },
 
     // 自定义属性
