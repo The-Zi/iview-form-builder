@@ -2,13 +2,13 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:49:12
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-05-31 09:06:02
+ * @Last Modified time: 2018-06-08 13:38:09
  */
 
 <template>
-  <Row style="height: 2000px;">
-    <!-- 构建区域 -->
-    <Col span="16">
+  <Row>
+    <!-- 表单区域 -->
+    <Col span="24">
       <!-- 表单基础信息 -->
       <Col class="form-row" span="24">
         <Row>
@@ -60,36 +60,41 @@
         </Row>
       </Col>
 
-      <!-- 表单构造区域 -->
+      <!-- 表单元素渲染区域 -->
       <Col class="form-row" span="24">
-          <form-grid @save="getFormData" ref="formBuilder" :rowNumber="rowNumber"></form-grid>
+          <form-builder-grid @save="getForm" ref="formBuilder" :rowNumber="rowNumber"></form-builder-grid>
       </Col>
     </Col>
 
-    <!-- 表单项组件 -->
+    <!-- 表单侧边栏 -->
     <Col span="8">
-      <iview-form-builder-modules @save="getFormData({action:true})" @clear="clearFormData">
-      </iview-form-builder-modules>
+      <form-builder-sidebar :formElementList="formElementList" @save="getForm({action:true})"
+      @clear="clearFormData">
+      </form-builder-sidebar>
     </Col>
 
     <!-- 增减表单行数 -->
-    <Col class="form-row-set" span="16">
-      <Row>
-        <Col span="8" offset="8">
-          <Row :gutter="10">
-            <Col span="12">
-              <Button long @click.native="rowMinus" title="删除">
-                <Icon type="minus"></Icon>
-              </Button>
-            </Col>
-            <Col span="12">
-              <Button long type="primary" @click.native="rowPlus" title="增加">
-                <Icon type="plus"></Icon>
-              </Button>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
+    <Col class="form-row-set" span="24">
+      <ButtonGroup shape="circle">
+          <Button type="ghost" @click.native="rowMinus" title="删除行">
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            <Icon type="minus"></Icon>
+            &nbsp;
+            &nbsp;
+            &nbsp;
+          </Button>
+          <Button type="ghost" @click.native="rowPlus" title="增加行">
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            <Icon type="plus"></Icon>
+            &nbsp;
+            &nbsp;
+            &nbsp;
+          </Button>
+      </ButtonGroup>
     </Col>
   </Row>
 </template>
@@ -145,31 +150,32 @@
       border-right: none;
     }
   }
-@media screen and (max-width: 982px) {
-  // 表单列
-  .form-col {
-    padding: $colPadding;
-    border: 0;
-    // border-right: 1px solid #ccc;
-    // &:last-child {
-    //   border-right: none;
-    // }
+
+  // 媒体查询：定义在特定大小设备下的样式
+  @media screen and (max-width: 982px) {
+    .form-col {
+      padding: $colPadding;
+      border: 0;
+    }
   }
-}
 
 }
 
 // 表单单元格行数增加
 .form-row-set {
-  margin-top: 10px;
+  text-align: center;
+  padding-top: $padding;
 }
 </style>
 
 <script>
-  // 表单栅格系统
-  import formGrid from './formGrid';
-  // 表单组件
-  import iviewFormBuilderModules from './componentes/iviewFormBuilderModules';
+  // 导入配置文件
+  import config from './config';
+  // 栅格系统
+  import formBuilderGrid from './componentes/formBuilderGrid';
+  // 侧边栏
+  import formBuilderSidebar from './componentes/formBuilderSidebar';
+  // import iviewFormBuilderModules from './formModules';
 
   export default {
     // 本组件名
@@ -177,8 +183,9 @@
 
     // 应用组件
     components: {
-      formGrid,
-      iviewFormBuilderModules
+      formBuilderGrid,
+      formBuilderSidebar,
+      // iviewFormBuilderModules
     },
 
     // 自定义属性
@@ -212,6 +219,9 @@
 
         // 表单行数
         rowNumber: 1,
+
+        // 表单元素
+        formElementList: config.formElement
       }
     },
 
@@ -235,7 +245,7 @@
       },
 
       // 获取构建好的表单数据
-      getFormData(params){
+      getForm(params){
         if (params.action) {
           this.$refs.formBuilder.saveBuilder();
         } else if(params.data) {

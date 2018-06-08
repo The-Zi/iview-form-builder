@@ -2,12 +2,25 @@
  * @Author: chenzicong
  * @Date: 2018-04-17 16:35:42
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-05-30 17:56:45
+ * @Last Modified time: 2018-06-06 10:50:53
  */
 
 <template>
     <Row>
-        <Col class="upload-row" span="24">
+        <Col span="24">
+            <!-- 帮助信息 -->
+            <div class="file-upload-tips">
+                <p>
+                    1、文件大小不能大于：
+                    <span class="tips-highlight">{{this.maxSize / 1024}}M</span>
+                </p>
+                <p>
+                    2、只允许上传后缀名为：
+                    <span class="tips-highlight">{{this.acceptType.join("、")}}</span>类型的文件
+                </p>
+            </div>
+
+            <!-- 待上传文件列表 -->
             <table class="file-table-wrap" border="1" cellpadding="0" cellspacing="0">
                 <th style="width: 70%;">待上传列表</th>
                 <th style="width: 10%;">创建人</th>
@@ -28,7 +41,7 @@
 
                     <!-- 操作 -->
                     <td>
-                        <a v-if="item.url" :href="[item.url,baseUrl]| urlFilter">
+                        <a v-if="item.url" :href="[item.url,baseUrl]|urlFilter">
                             <Icon class="action" title="下载" type="arrow-down-a" size="16"></Icon>
                         </a>
 
@@ -40,21 +53,12 @@
             </table>
         </Col>
 
+        <!-- 上传控件 -->
         <Col class="upload-row" span="24">
             <Row>
-                <!-- 上传备注 -->
-                <!-- <Col class="upload-col" span="24">
-                    <Form ref="uploadRemark" :model="uploadRemark" :rules="ruleValidate">
-                        <FormItem label="上传备注：" prop="remark">
-                            <Input v-model="uploadRemark.remark" placeholder=""></Input>
-                        </FormItem>
-                    </Form>
-                </Col> -->
-
-                <!-- 上传控件 -->
                 <Col class="upload-col" span="8" :offset="8">
                     <upload ref="upload" :action="actionUrl"
-                        :max-size="2048"
+                        :max-size="maxSize"
                         :show-upload-list="false"
                         :before-upload="stopDefaultUpload"
                         :on-success="success"
@@ -92,18 +96,27 @@ import { baseUrl } from '@/libs/api';
 import { deleteCommFileResource } from '@/libs/file_api';
 
 export default {
-
     // 组件名
-    name: "form-upload",
+    name: "file-remark-upload",
 
     props:{
-        // 附件上传地址
+        // 文件上传地址
         actionUrl: {
             default: ""
         },
         // 渲染数据
         renderData:{
             default: Array
+        },
+        // 文件上传大小限制
+        fileMaxSize: {
+            default: 2048
+        },
+        // 允许上传的文件类型
+        acceptType: {
+            default: ()=>{
+                return ["jpg", "gif", "png", "pdf", "doc", "docx", "xls", "xlsx"]
+            }
         }
     },
 
@@ -114,7 +127,7 @@ export default {
            baseUrl:baseUrl,
            // 待上传文件列表
            fileList: [],
-           // 需要上的文件数量/小标
+           // 需要上的文件数量/下标
            fileUploadNum: [],
            // 文件上传后，返回的路径列表
            uploadResultList: [],
@@ -144,16 +157,24 @@ export default {
         }
     },
 
+    // 计算属性
+    computed:{
+        // 文件最大，大小
+        maxSize: function () {
+            return this.fileMaxSize
+        },
+    },
+
     // 方法
     methods : {
         // 创建通用数据
         initGlobalData(){
             let date = new Date();
             let year = date.getFullYear();
-            let month = date.getMonth() + 1 > 10 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1);
-            let day = date.getDate();
+            let month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1);
+            let day = date.getDate() >= 10 ? date.getDate() : "0" + date.getDate();
 
-            this.fileList[this.fileList.length - 1].userName = window.sessionStorage.getItem("userName");
+            this.fileList[this.fileList.length - 1].userName = window.localStorage.getItem("userName");
             this.fileList[this.fileList.length - 1].createTime = date.getTime();
             this.fileList[this.fileList.length - 1].createTimeTemp = year + "-" + month + "-" + day;
         },
@@ -162,14 +183,18 @@ export default {
         renderDefaultList(){
             let renderData = this.renderData;
 
-            if (renderData.length > 0) {
+            if (Array.isArray(renderData) && renderData.length > 0) {
+                // 重置文件列表
+                this.fileList = [];
+
                 for (let index = 0; index < renderData.length; index++) {
+                    // 格式化时间日期
                     let date = new Date(Number(renderData[index].createTime));
                     let year = date.getFullYear();
                     let month = date.getMonth() + 1 > 10 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1);
                     let day = date.getDate();
-                    this.fileList = [];
-                    this.fileList = [];
+
+                    // 添加文件
                     this.fileList.push({
                         id: renderData[index].id,
                         title: renderData[index].title,
@@ -204,6 +229,11 @@ export default {
             }
         },
 
+        // 清空待上传文件列表
+        clearFileList(){
+            this.fileList = [];
+        },
+
         // 添加文件备注
         addFileRemark(){
             if (this.fileRemark !== "") {
@@ -221,15 +251,49 @@ export default {
             this.fileRemarkModal = !this.fileRemarkModal;
         },
 
-        // 阻止默认上传行为
+        // 阻止默认上传行为&限制文件类型&限制文件大小
         stopDefaultUpload(file){
-            this.fileList.push({file: file, title: file.name});
-            this.fileRemark = "";
-            this.remakError = false;
-            this.fileRemarkModal = !this.fileRemarkModal;
+            // 获取选择的文件的文件类型
+            let fileType = file.name.split(".");
+            let nowType = fileType[fileType.length - 1];
+            // 文件类型检查结果
+            let checkTypeResult = false;
 
-            // 创建通用数据
-            this.initGlobalData();
+            // 检测文件类型是否在允许范围内
+            for (let index = 0; index < this.acceptType.length; index++) {
+                if (nowType.toLowerCase() === this.acceptType[index].toLowerCase()) {
+                        checkTypeResult = true;
+                    break;
+                }
+            }
+
+            // 不允许的文件类型
+            if (!checkTypeResult) {
+                this.$Modal.error({
+                    title: "文件类型错误",
+                    content: "只允许上传后缀名为：" + this.acceptType.join("、") + " 类型的文件"
+                });
+
+            // 超出最大限制
+            } else if(file.size / 1024 > this.maxSize) {
+                this.$Modal.error({
+                    title: "文件大小错误",
+                    content: "文件大小不能超过：" + this.maxSize / 1024 + "M"
+                });
+
+            // 允许上传
+            } else {
+                // 重置备注信息
+                this.fileRemark = "";
+                // 重置备注信息错误状态
+                this.remakError = false;
+                // 显示输入备注信息对话框
+                this.fileRemarkModal = !this.fileRemarkModal;
+                // 将选择的文件添加进待上传文件列表
+                this.fileList.push({file: file, title: file.name});
+                // 创建通用数据
+                this.initGlobalData();
+            }
 
             return false
         },
@@ -323,8 +387,8 @@ export default {
 
     // 监控数据变化
     watch:{
+        // 渲染默认文件列表
         renderData: function (newVal, oldVal) {
-
             this.renderDefaultList();
         }
     },
@@ -338,7 +402,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 // =============== 导入样式文件 ===============
 @import "./styles/baseStyles";
 @import "./styles/commonStyles";
@@ -346,11 +410,13 @@ export default {
 
 // 附件上传组件
 .upload-row {
-    margin-top: 20px;
+    margin-top: 15px;
     .ivu-upload-select {
         width: 100%!important;
     }
 }
+
+// 待上传文件列表
 .file-table-wrap {
     width: 100%;
     border: 1px solid #ccc;
@@ -382,6 +448,18 @@ export default {
                 cursor: pointer;
             }
         }
+    }
+}
+
+// 帮助信息
+.file-upload-tips {
+    padding: 5px 0;
+    p {
+        font-size: 12px;
+    }
+    .tips-highlight {
+        margin: 0 5px;
+        color: #ff6666;
     }
 }
 </style>
