@@ -2,7 +2,7 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:49:12
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-08 13:38:09
+ * @Last Modified time: 2018-06-21 17:31:29
  */
 
 <template>
@@ -61,7 +61,7 @@
       </Col>
 
       <!-- 表单元素渲染区域 -->
-      <Col class="form-row" span="24">
+      <Col span="24">
           <form-builder-grid @save="getForm" ref="formBuilder" :rowNumber="rowNumber"></form-builder-grid>
       </Col>
     </Col>
@@ -71,30 +71,6 @@
       <form-builder-sidebar :formElementList="formElementList" @save="getForm({action:true})"
       @clear="clearFormData">
       </form-builder-sidebar>
-    </Col>
-
-    <!-- 增减表单行数 -->
-    <Col class="form-row-set" span="24">
-      <ButtonGroup shape="circle">
-          <Button type="ghost" @click.native="rowMinus" title="删除行">
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            <Icon type="minus"></Icon>
-            &nbsp;
-            &nbsp;
-            &nbsp;
-          </Button>
-          <Button type="ghost" @click.native="rowPlus" title="增加行">
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            <Icon type="plus"></Icon>
-            &nbsp;
-            &nbsp;
-            &nbsp;
-          </Button>
-      </ButtonGroup>
     </Col>
   </Row>
 </template>
@@ -158,13 +134,6 @@
       border: 0;
     }
   }
-
-}
-
-// 表单单元格行数增加
-.form-row-set {
-  text-align: center;
-  padding-top: $padding;
 }
 </style>
 
@@ -175,7 +144,6 @@
   import formBuilderGrid from './componentes/formBuilderGrid';
   // 侧边栏
   import formBuilderSidebar from './componentes/formBuilderSidebar';
-  // import iviewFormBuilderModules from './formModules';
 
   export default {
     // 本组件名
