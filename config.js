@@ -2,7 +2,7 @@
  * @Author: The-Zi
  * @Date: 2018-06-05 16:22:46
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-08 16:35:20
+ * @Last Modified time: 2018-06-22 09:53:17
  */
 
 //  表单构建器默认配置文件
@@ -36,8 +36,26 @@ const config = {
                 color: ''
             }
         },
+        count: {
+            title: '计算公式',
+            type: 'count',
+            icon: {
+                name: '',
+                size: '',
+                color: ''
+            }
+        },
+        money: {
+            title: '金额',
+            type: 'money',
+            icon: {
+                name: '',
+                size: '',
+                color: ''
+            }
+        },
         radio: {
-            title: '单选',
+            title: '单选框',
             type: 'radio',
             icon: {
                 name: '',
@@ -46,7 +64,7 @@ const config = {
             }
         },
         checkbox: {
-            title: '多选',
+            title: '多选框',
             type: 'checkbox',
             icon: {
                 name: '',
@@ -55,7 +73,7 @@ const config = {
             }
         },
         select: {
-            title: '下拉选择',
+            title: '下拉框',
             type: 'select',
             icon: {
                 name: '',
@@ -93,6 +111,15 @@ const config = {
         dateTimeRange: {
             title: '时间日期范围',
             type: 'dateTimeRange',
+            icon: {
+                name: '',
+                size: '',
+                color: ''
+            }
+        },
+        detailed: {
+            title: '明细',
+            type: 'detailed',
             icon: {
                 name: '',
                 size: '',

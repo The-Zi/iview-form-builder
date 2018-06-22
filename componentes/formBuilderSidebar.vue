@@ -2,7 +2,7 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:50:02
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-08 16:48:21
+ * @Last Modified time: 2018-06-22 13:42:18
  */
 
 <template>
@@ -19,6 +19,10 @@
 
 
         <!-- 表单构建器：表单元素 -->
+        <div class="builder-form-element">
+          <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;套件
+        </div>
+
         <div class="builder-form-element" v-for="(element, index) in elementList" :key="element + index"
         draggable="true" @dragstart="drag({type: element.type}, $event)">
           <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;
@@ -30,13 +34,13 @@
         <div class="builder-active">
           <!-- 清空构建器内容 -->
           <div class="active-item">
-            <Button type="ghost" shape="circle" size="large" icon="ios-loop-strong"
+            <Button type="ghost" shape="circle" size="large" icon="close"
             @click="clear" title="清空"></Button>
           </div>
 
           <!-- 保存构建器数据 -->
           <div class="active-item">
-            <Button type="success" shape="circle" size="large" icon="compose"
+            <Button type="success" shape="circle" size="large" icon="checkmark"
             @click="clear" title="保存"></Button>
           </div>
         </div>
@@ -155,6 +159,7 @@
 
     // 方法
     methods: {
+      say(){console.log(231)},
       // 切换显示设备
       deviceToggle:function (params) {
         this.activerDevice = params;
