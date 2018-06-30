@@ -88,7 +88,19 @@
             </div>
 
             <!-- 表单元素 -->
-            <h2>计算公式</h2>
+            <Input-number style="width: 100%;" v-model="modules.value" :placeholder="modules.tips"
+            @on-change="moneyFormat(modules)">
+            </Input-number>
+
+            <!-- 中文大写数字金额 -->
+            <p v-if="modules.showUpper">
+                <!-- 结果提示 -->
+                <span v-if="modules.resultTips">{{modules.resultTips}}</span>
+                <!-- 单位 -->
+                <span v-if="modules.unit">({{modules.unit}})</span>
+                <!-- 中文大写数字金额 -->
+                {{modules.cnNum}}
+            </p>
         </FormItem>
 
         <!-- 表单元素: 金额 -->
@@ -112,8 +124,15 @@
             :min="modules.min" :placeholder="modules.tips" @on-change="moneyFormat(modules)">
             </Input-number>
 
-            <!-- 中文数字金额 -->
-            <p v-show="modules.showUpper">{{modules.resultTips}}({{modules.unit}})：{{modules.cnNum}}</p>
+            <!-- 中文大写数字金额 -->
+            <p v-if="modules.showUpper">
+                <!-- 结果提示 -->
+                <span v-if="modules.resultTips">{{modules.resultTips}}</span>
+                <!-- 单位 -->
+                <span v-if="modules.unit">({{modules.unit}})</span>
+                <!-- 中文大写数字金额 -->
+                {{modules.cnNum}}
+            </p>
         </FormItem>
 
         <!-- 表单元素: 单选框 -->

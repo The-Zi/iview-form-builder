@@ -72,11 +72,11 @@
                             <ButtonGroup>
                                 <!-- 移除增加的元素 -->
                                 <Button type="ghost" icon="minus" @click.native="minusDetailElements(modules)">
-                                  <!-- {{modules.actionMinus}} -->
+                                  {{modules.actionMinus}}
                                 </Button>
                                 <!-- 循环复制增加元素 -->
                                 <Button type="ghost" icon="plus" @click.native="plusDetailElements(modules)">
-                                  <!-- {{modules.actionPlus}} -->
+                                  {{modules.actionPlus}}
                                 </Button>
                             </ButtonGroup>
                         </div>
@@ -114,15 +114,17 @@
     </Col>
 
     <!-- =============== 对话框：表单元素设置 =============== -->
-    <Modal v-model="modulesSetingModalToogle">
+    <Modal v-model="modulesSetingModalToogle" :closable="false" :mask-closable="false">
       <!-- 标题 -->
       <p slot="header" class="congfig-modal-header">
         <span>{{moduleConfig.title}}设置</span>
       </p>
 
-      <!-- 表单组件配置项 -->
-      <Form ref="configForm" :rules="ruleValidate" :model="moduleConfig" label-position="left"
+      <!-- 表单组件配置项 & 计算公式配置项-->
+      <!-- 在同一对话框切换显示表单元素配置项和计算公式配置项 -->
+      <Form v-show="!formulasSettingToogle" ref="configForm" :rules="ruleValidate" :model="moduleConfig" label-position="left"
        :label-width="100">
+
         <!-- 设为必填项 -->
         <!-- 表单元素：说明文本 和 明细，不需要必填项设置 -->
         <FormItem v-if="moduleConfig.type !== element.textRead.type &&
@@ -132,19 +134,19 @@
 
         <!-- 字段名 -->
         <!-- 表单元素： 明细，不需要字段名设置 -->
-        <FormItem label="字段名：" prop="name" v-if="moduleConfig.type !== element.detailed.type">
+        <FormItem label="字段名：" v-if="moduleConfig.type !== element.detailed.type" prop="name">
           <Input v-model="moduleConfig.name" @keyup.native="filterBlank" placeholder="只能输入英文"></Input>
         </FormItem>
 
         <!-- 标题 -->
         <FormItem label="标题：" prop="label">
-          <Input v-model="moduleConfig.label" placeholder="请输入该组件的名称"></Input>
+          <Input v-model="moduleConfig.label" :maxlength="20" placeholder="请输入该组件的名称"></Input>
         </FormItem>
 
         <!-- 文本输入框配置 -->
         <template v-if="moduleConfig.type === element.inputText.type">
           <FormItem label="提示信息：" prop="tips">
-            <Input v-model="moduleConfig.tips" placeholder="最大长度20" :maxlength="20"></Input>
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
           </FormItem>
 
           <FormItem label="默认值：">
@@ -155,7 +157,7 @@
         <!-- 数字输入框配置 -->
         <template v-if="moduleConfig.type === element.inputNumber.type">
           <FormItem label="提示信息：" prop="tips">
-            <Input v-model="moduleConfig.tips" placeholder="最大长度20" :maxlength="20"></Input>
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
           </FormItem>
 
           <FormItem label="默认值：">
@@ -172,16 +174,42 @@
           </FormItem>
         </template>
 
+        <!-- 计算公式 配置 -->
+        <template v-if="moduleConfig.type === element.count.type">
+          <FormItem label="计算公式：">
+            <Input v-model="moduleConfig.formulas" placeholder="结果 = " :readonly="true"
+            @click.native="setFormulasModal">
+            </Input>
+          </FormItem>
+
+          <FormItem label="提示信息：" prop="tips">
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
+          </FormItem>
+
+          <FormItem label="显示大写：">
+            <Checkbox v-model="moduleConfig.showUpper"></Checkbox>
+          </FormItem>
+
+          <!-- <FormItem label="大写结果提示：">
+            <Input style="width: 100%;" v-model="moduleConfig.resultTips" placeholder="最大长度10"
+            :maxlength="10"></Input>
+          </FormItem>
+
+          <FormItem label="单位提示：">
+            <Input style="width: 100%;" v-model="moduleConfig.unit" placeholder="最大长度20"
+            :maxlength="20"></Input> -->
+          </FormItem>
+        </template>
 
         <!-- 金额 -->
         <template v-if="moduleConfig.type === element.money.type">
-          <FormItem label="提示信息：" prop="tips">
-            <Input v-model="moduleConfig.tips" placeholder="最大长度20" :maxlength="20"></Input>
-          </FormItem>
-
           <FormItem label="默认值：">
             <Input-number style="width: 100%;" :min="moduleConfig.min" :max="moduleConfig.max"
             v-model="moduleConfig.value"></Input-number>
+          </FormItem>
+
+          <FormItem label="提示信息：" prop="tips">
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
           </FormItem>
 
           <FormItem label="显示大写：">
@@ -196,14 +224,14 @@
             <Input-number style="width: 100%;" :min="0" :max="this.moneyMax" v-model="moduleConfig.max"></Input-number>
           </FormItem>
 
-          <FormItem label="转换结果提示：">
+          <!-- <FormItem label="大写结果提示：">
             <Input style="width: 100%;" v-model="moduleConfig.resultTips" placeholder="最大长度10"
             :maxlength="10"></Input>
-          </FormItem>
+          </FormItem> -->
 
-          <FormItem label="单位提示：">
+          <!-- <FormItem label="单位提示：">
             <Input style="width: 100%;" v-model="moduleConfig.unit" placeholder="最大长度10"
-            :maxlength="10"></Input>
+            :maxlength="10"></Input> -->
           </FormItem>
         </template>
 
@@ -242,12 +270,12 @@
 
         <!-- 多行文本配置 -->
         <template v-if="moduleConfig.type === element.textarea.type">
-          <FormItem label="提示信息：" prop="tips">
-            <Input v-model="moduleConfig.tips" placeholder="最大长度20" :maxlength="20"></Input>
-          </FormItem>
-
           <FormItem label="默认值：">
             <Input v-model="moduleConfig.value" type="textarea" :rows="4"></Input>
+          </FormItem>
+
+          <FormItem label="提示信息：" prop="tips">
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
           </FormItem>
         </template>
 
@@ -262,7 +290,7 @@
         <template v-if="moduleConfig.type === element.dateTime.type ||
         moduleConfig.type === element.dateTimeRange.type">
           <FormItem label="提示信息：" prop="tips">
-            <Input v-model="moduleConfig.tips" placeholder="最大长度20" :maxlength="20"></Input>
+            <Input v-model="moduleConfig.tips" placeholder="最大长度50" :maxlength="50"></Input>
           </FormItem>
 
           <FormItem label="时间日期格式：">
@@ -272,13 +300,35 @@
             </Select>
           </FormItem>
         </template>
+
+        <!-- 明细 配置 -->
+        <template v-if="moduleConfig.type === element.detailed.type">
+          <FormItem label="动作名称（增加）：" prop="plus">
+            <Input v-model="moduleConfig.actionPlus" placeholder="增加明细的动作名称"></Input>
+          </FormItem>
+          <FormItem label="动作名称（减少）：" prop="minus">
+            <Input v-model="moduleConfig.actionMinus" placeholder=""></Input>
+          </FormItem>
+        </template>
       </Form>
 
       <!-- 对话框底部 -->
-      <div slot="footer">
-        <Button type="text" size="large" @click.native="cancelConfigModal">取消</Button>
+      <div slot="footer" v-show="!formulasSettingToogle">
+        <Button type="ghost" size="large" @click.native="cancelConfigModal">关闭</Button>
         <Button type="primary" size="large" @click.native="saveModuleConfig">确定</Button>
       </div>
+
+      <!-- 计算公式 配置 -->
+      <template v-show="formulasSettingToogle">
+        <div v-show="formulasSettingToogle">
+          <h3>计算公式 配置</h3>
+        </div>
+
+        <div slot="footer" v-show="formulasSettingToogle">
+          <Button type="ghost" size="large" @click.native="closeFormulasSetting">取消</Button>
+          <Button type="primary" size="large" @click.native="saveFormulasSetting">保存计算公式</Button>
+        </div>
+      </template>
     </Modal>
   </Row>
 </template>
@@ -463,6 +513,8 @@ import formBuilderElements from './formBuilderElements';
         element: config.formElement,
         // 表单组件设置对话框
         modulesSetingModalToogle: false,
+        // 计算公式 配置
+        formulasSettingToogle: false,
         // 表单组件配置
         moduleConfig: {},
         // 暂存当前配置中的组件
@@ -591,6 +643,12 @@ import formBuilderElements from './formBuilderElements';
 
             // 表单元素提示信息/占位符
             tempItem.tips = "";
+            tempItem.value = null;
+            tempItem.formulas = "";
+            tempItem.resultTips = "大写：";
+            tempItem.unit = "";
+            tempItem.cnNum = "";
+            tempItem.showUpper = true;
           break;
 
           // 金额
@@ -606,8 +664,8 @@ import formBuilderElements from './formBuilderElements';
             tempItem.value = null;
             tempItem.max = 100000;
             tempItem.min = 0;
-            tempItem.resultTips = "金额";
-            tempItem.unit = "元";
+            tempItem.resultTips = "大写：";
+            tempItem.unit = "";
             tempItem.cnNum = "";
             tempItem.showUpper = true;
           break;
@@ -756,10 +814,11 @@ import formBuilderElements from './formBuilderElements';
         //对应小数部分单位
         let cnDecUnits = new Array('角', '分', '毫', '厘');
         //整数金额时后面跟的字符
+        // let cnInteger = '';
         let cnInteger = '整';
         //整型完以后的单位
-        // let cnIntLast = '元';
-        let cnIntLast = params.unit;
+        // let cnIntLast = params.unit;
+        let cnIntLast = '元';
         //最大处理的数字
         let maxNum = this.moneyMax;
         //金额整数部分
@@ -843,6 +902,21 @@ import formBuilderElements from './formBuilderElements';
 
         // 设置转换结果
         params.cnNum = chineseStr;
+      },
+
+      // 显示计算公式配置
+      setFormulasModal: function () {
+        this.formulasSettingToogle = true;
+      },
+
+      // 关闭计算公式配置
+      closeFormulasSetting: function () {
+        this.formulasSettingToogle = false;
+      },
+
+      // 保存计算公式配置
+      saveFormulasSetting: function () {
+        console.log(22)
       },
 
       // 组件设置
@@ -932,9 +1006,11 @@ import formBuilderElements from './formBuilderElements';
         // 清空验证信息
         this.$refs.configForm.resetFields();
 
+        // 关闭计算公式配置项
+        this.formulasSettingToogle = false;
+
         // 关闭对话框
         this.modulesSetingModalToogle = false;
-
       },
 
       // 删除组件
