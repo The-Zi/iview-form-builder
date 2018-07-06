@@ -2,7 +2,7 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:49:12
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-21 17:31:29
+ * @Last Modified time: 2018-07-05 11:57:48
  */
 
 <template>
@@ -62,7 +62,7 @@
 
       <!-- 表单元素渲染区域 -->
       <Col span="24">
-          <form-builder-grid @save="getForm" ref="formBuilder" :rowNumber="rowNumber"></form-builder-grid>
+          <form-builder-grid ref="formBuilder"></form-builder-grid>
       </Col>
     </Col>
 
@@ -138,88 +138,70 @@
 </style>
 
 <script>
-  // 导入配置文件
-  import config from './config';
-  // 栅格系统
-  import formBuilderGrid from './componentes/formBuilderGrid';
-  // 侧边栏
-  import formBuilderSidebar from './componentes/formBuilderSidebar';
+// =============== 导入模块 ===============
+// 配置文件
+import config from './config';
+// 栅格系统
+import formBuilderGrid from './componentes/formBuilderGrid';
+// 侧边栏
+import formBuilderSidebar from './componentes/formBuilderSidebar';
 
-  export default {
-    // 本组件名
-    name: "form-builder",
+export default {
+  // 本组件名
+  name: "iview-form-builder",
 
-    // 应用组件
-    components: {
-      formBuilderGrid,
-      formBuilderSidebar,
-      // iviewFormBuilderModules
-    },
+  // 应用组件
+  components: {
+    formBuilderGrid,
+    formBuilderSidebar
+  },
 
-    // 自定义属性
-    props: {
-      // 表单类型
-      baseData: {
-        default:function () {
-          return {
-            number: "自动获取",
-              formTypeName:'',
-              formType:''
-          }
+  // 自定义属性
+  props: {
+    // 表单类型
+    baseData: {
+      default:function () {
+        return {
+          number: "自动获取",
+            formTypeName:'',
+            formType:''
         }
       }
-    },
+    }
+  },
 
-    // 数据
-    data() {
-      return {
-        // 占位用表单数据
-        formData:{
+  // 数据
+  data() {
+    return {
+      // 占位用表单数据
+      formData:{
           number:"自动获取",
           status:"0",
           userName:"自动获取",
           department:"自动获取",
           date:"自动获取",
-        },
+      },
 
-        // 设置表单行数
-        rowSet: false,
+      // 表单元素
+      formElementList: config.formElement
+    }
+  },
 
-        // 表单行数
-        rowNumber: 1,
-
-        // 表单元素
-        formElementList: config.formElement
-      }
+  // 方法
+  methods: {
+    // 清空表单
+    clearFormData() {
+      this.$refs.formBuilder.clearBuilderData();
     },
 
-    // 方法
-    methods: {
-      // 清空表单
-      clearFormData() {
-        this.$refs.formBuilder.clearBuilder();
-      },
-
-      // 增加行数
-      rowPlus() {
-        this.rowNumber = this.rowNumber + 1;
-      },
-
-      // 减少表单行数
-      rowMinus() {
-        if (this.rowNumber > 1) {
-          this.rowNumber = this.rowNumber - 1;
-        }
-      },
-
-      // 获取构建好的表单数据
-      getForm(params){
-        if (params.action) {
-          this.$refs.formBuilder.saveBuilder();
-        } else if(params.data) {
-          this.$emit("save", this.baseData, params.data);
-        }
+    // 获取构建好的表单数据
+    getForm(params){
+      if (params.action) {
+        return this.$refs.formBuilder.getBuilderData();
+      } else if(params.data) {
+        this.$emit("save", this.baseData, params.data);
       }
     }
   }
+}
 </script>

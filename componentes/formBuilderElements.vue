@@ -2,7 +2,7 @@
  * @Author: The-Zi
  * @Date: 2018-06-22 14:15:33
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-22 14:38:34
+ * @Last Modified time: 2018-07-06 17:15:16
  */
 
 
@@ -14,10 +14,11 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.budget.type"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -32,16 +33,17 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.inputText.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"
                 type="ios-gear"/>
 
                  <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -53,21 +55,25 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.inputNumber.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
+            <!-- 发现可计算对象事件 -->
+            {{findCalculatorEvent(modules)}}
+
             <!-- 表单元素 -->
             <Input-number style="width: 100%;" v-model="modules.value" :max="modules.max"
-            :min="modules.min" :placeholder="modules.tips">
+            :min="modules.min" :placeholder="modules.tips" @on-blur="countEvent(modules)">
             </Input-number>
         </FormItem>
 
@@ -75,21 +81,28 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.count.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
+            <!-- 发现计算公式组件事件 -->
+            {{findCountFormulaModuleEvent(modules)}}
+
+            <!-- 发现可计算对象事件 -->
+            {{findCalculatorEvent(modules)}}
+
             <!-- 表单元素 -->
             <Input-number style="width: 100%;" v-model="modules.value" :placeholder="modules.tips"
-            @on-change="moneyFormat(modules)">
+            @on-change="convertMoneyFormatEvent(modules)" @on-blur="countEvent(modules)">
             </Input-number>
 
             <!-- 中文大写数字金额 -->
@@ -107,21 +120,26 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.money.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
+            <!-- 发现可计算对象事件 -->
+            {{findCalculatorEvent(modules)}}
+
             <!-- 表单元素 -->
             <Input-number style="width: 100%;" v-model="modules.value" :max="modules.max"
-            :min="modules.min" :placeholder="modules.tips" @on-change="moneyFormat(modules)">
+            :min="modules.min" :placeholder="modules.tips" @on-change="convertMoneyFormatEvent(modules)"
+            @on-blur="countEvent(modules)">
             </Input-number>
 
             <!-- 中文大写数字金额 -->
@@ -139,15 +157,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.radio.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -162,15 +181,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.checkbox.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -185,15 +205,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.select.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -209,15 +230,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.textarea.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -229,15 +251,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.textRead.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -249,15 +272,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.dateTime.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -274,15 +298,16 @@
         <FormItem class="form-elements-wrap" v-if="modules.type === element.dateTimeRange.type"
         :required="modules.require" :label="modules.label">
             <!-- 操作元素 -->
-            <div class="form-elements-action">
+            <div class="form-elements-action" v-if="modeType === modeOption.builder ||
+            modeType === modeOption.detailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
-                @click.native="setting({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
+                @click.native="settingEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex, mIndex: mIndex})"
                 type="ios-gear"/>
 
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
-                @click.native="delElement({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
+                @click.native="delElementEvent({rowIndex: elementsData.rowIndex, colIndex: elementsData.colIndex,
                 mIndex: mIndex, element: modules})"/>
             </div>
 
@@ -332,8 +357,12 @@ import config from '../config';
     // 数据
     data() {
       return {
+        // 设备选项
+        devicesOption: config.devices,
+        // 组件模式选项
+        modeOption: config.mode,
         // 表单元素配置
-        element: config.formElement,
+        element: config.formElement
       }
     },
 
@@ -342,6 +371,10 @@ import config from '../config';
         // 表单元素数据
         elementsData: {
             default: {}
+        },
+        // 表单元素数据
+        mode: {
+            default: ""
         }
     },
 
@@ -350,24 +383,49 @@ import config from '../config';
         // 表单列
         col: function(){
             return this.elementsData.col
+        },
+        // 表单列
+        modeType: function(){
+            return this.mode
         }
     },
 
     // 方法
     methods: {
-        // 删除表单元素
-        delElement: function (params) {
+        // 表单元素删除事件
+        delElementEvent: function (params) {
+            // 自定义事件：删除表单元素
             this.$emit("delete", params)
         },
 
-        // 设置表单元素
-        setting: function (params) {
+        // 表单元素设置事件
+        settingEvent: function (params) {
+            // 自定义事件：设置表单元素
             this.$emit("setting", params)
         },
 
-        // 货币格式
-        moneyFormat: function (params) {
+        // 转换成货币格式事件
+        convertMoneyFormatEvent: function (params) {
+            // 自定义事件：转换成货币格式
             this.$emit("moneyFormat", params)
+        },
+
+        // 计算事件
+        countEvent: function (params) {
+            // 自定义事件：计算
+            this.$emit("count", params);
+        },
+
+        // 发现计算公式组件事件
+        findCountFormulaModuleEvent: function (params) {
+            // 自定义事件：发现计算公式组件
+            this.$emit("findCountFormula", params);
+        },
+
+        // 发现可计算对象事件
+        findCalculatorEvent: function (params) {
+            // 自定义事件：发现可计算对象
+            this.$emit("findCalculator", params);
         },
 
         // 时间日期组件格式设置

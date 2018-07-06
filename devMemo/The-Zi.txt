@@ -1,4 +1,4 @@
-《iview-form-builder开发备忘录》
+《iview-form-builder：开发进度备忘录》
 
 2018/6/30:
 1、表单元素-计算公式

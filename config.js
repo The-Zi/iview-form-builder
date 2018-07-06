@@ -7,6 +7,17 @@
 
 //  表单构建器默认配置文件
 const config = {
+    // 设备
+    devices: {
+        desktop: 'desktop',
+        mobile: 'mobile'
+    },
+    // 模式
+    mode: {
+        builder: 'builder',
+        render: 'render',
+        detailed: 'detailed'
+    },
     // 表单元素
     formElement: {
         budget: {
