@@ -1,0 +1,42 @@
+/*
+ * @Author: The-Zi
+ * @Date: 2018-07-17 16:42:11
+ * @Last Modified by: The-Zi
+ * @Last Modified time: 2018-07-17 16:43:33
+ */
+
+
+// =============== 导入样式 ===============
+@import "./base.scss";
+
+
+// =============== 表单头部样式 ===============
+  // 表单编号
+  .form-number-wrap {
+      padding: $padding;
+      padding-bottom: 0;
+  }
+
+  .form-number {
+      text-align: left;
+  }
+  // 表单类型
+  .form-type-wrap {
+      height: 100px;
+      padding: 0 $padding;
+      padding-bottom: 33px;
+      line-height: 100px;
+      text-align: center;
+      font-size: 16px;
+      > h1 {
+          font-weight: normal;
+      }
+  }
+  // 标题、紧急程度
+  .form-status-wrap,
+  .form-title-wrap {
+      padding: $padding;
+      .ivu-form-item {
+          margin-bottom: 0;
+      }
+  }

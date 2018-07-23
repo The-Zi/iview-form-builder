@@ -2,8 +2,9 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:50:02
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-22 13:42:18
+ * @Last Modified time: 2018-07-18 10:37:20
  */
+
 
 <template>
   <Row>
@@ -35,13 +36,13 @@
           <!-- 清空构建器内容 -->
           <div class="active-item">
             <Button type="ghost" shape="circle" size="large" icon="close"
-            @click="clear" title="清空"></Button>
+            @click="clearEvent" title="清空"></Button>
           </div>
 
           <!-- 保存构建器数据 -->
           <div class="active-item">
             <Button type="success" shape="circle" size="large" icon="checkmark"
-            @click="clear" title="保存"></Button>
+            @click="saveEvent" title="保存"></Button>
           </div>
         </div>
       </div>
@@ -49,50 +50,12 @@
   </Row>
 </template>
 
+
 <style lang="scss" scoped>
 // =============== 导入样式文件 ===============
-@import "../styles/baseStyles";
-@import "../styles/commonStyles";
-
-
-// 表单构建器：侧边栏
-.iview-form-builder-sidebar {
-  position: fixed;
-  right: 25px;
-  top: 122px;
-  z-index: 1000;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  width: 150px;
-  padding: $padding / 3;
-
-  // 表单构建器：显示设备
-  .builder-decive {
-    margin-bottom: $padding / 3;
-  }
-
-  // 表单构建器：表单元素
-  .builder-form-element {
-    height: 30px;
-    width: 100%;
-    border-radius: 15px;
-    padding: 0 $padding;
-    margin-bottom: $padding / 3;
-    line-height: 30px;
-    background-color: #f3f3f3;
-  }
-
-  // 表单构建器：构建操作
-  .builder-active {
-    text-align: center;
-    padding: $padding / 3;
-    .active-item {
-      float: left;
-      width: 50%;
-    }
-  }
-}
+@import "../styles/sidebar";
 </style>
+
 
 <script>
   export default {
@@ -159,7 +122,9 @@
 
     // 方法
     methods: {
-      say(){console.log(231)},
+      say(){
+        // console.log(231)
+      },
       // 切换显示设备
       deviceToggle:function (params) {
         this.activerDevice = params;
@@ -208,13 +173,15 @@
         $event.dataTransfer.setData("Text", params.type);
       },
 
-      // 保存构建的表单数据
-      save: function () {
+      // 保存构建的表单数据事件
+      saveEvent: function () {
+        // 自定义事件：保存构建的表单数据
         this.$emit("save");
       },
 
-      // 清空构建器
-      clear: function () {
+      // 清空构建器数据事件
+      clearEvent: function () {
+        // 自定义事件：清空构建器数据事件
         this.$emit("clear");
       },
     },

@@ -2,149 +2,42 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:49:12
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-07-05 11:57:48
+ * @Last Modified time: 2018-07-18 16:36:25
  */
 
 <template>
   <Row>
-    <!-- 表单区域 -->
     <Col span="24">
-      <!-- 表单基础信息 -->
-      <Col class="form-row" span="24">
-        <Row>
-          <!-- 表单类型编号 -->
-          <Col class="form-number-wrap" :xs="24" :sm="24" :md="16" :lg="16">
-            <p>单号：&nbsp;&nbsp;{{formData.number}}</p>
-          </Col>
+      <!-- 构建表单 -->
+      <builder v-if="mode === 'builder'" ref="builder" :baseData="nowBaseData"
+      @saveEvent="sendFormBuilderData">
+      </builder>
 
-          <!-- 表单类型名称 -->
-          <Col class="form-type-wrap" :xs="24" :sm="24" :md="24" :lg="24">
-            <h1>{{baseData.formTypeName}}</h1>
-          </Col>
+      <!-- 渲染表单 -->
+      <render v-if="mode === 'render'" ref="render" :baseData="nowBaseData" :renderData="nowRenderData"
+      @submitEvent="sendFormBuilderData"></render>
 
-          <Form ref="baseDataForm" :model="baseData"  :label-width="100" label-position="left">
-          <!-- 标题 -->
-          <Col class="form-title-wrap" :xs="24" :sm="24" :md="16" :lg="16">
-            <FormItem label="标题：" prop="title" required>
-              <Input v-model="formData.title" disabled placeholder="必填，请对本次申请进行说明"></Input>
-            </FormItem>
-          </Col>
-
-          <!-- 紧急程度 -->
-          <Col class="form-status-wrap" :xs="24" :sm="24" :md="8" :lg="8">
-            <FormItem label="紧急程度：" prop="status" required>
-              <RadioGroup v-model="formData.status">
-                <Radio :label="0" disabled>一般</Radio>
-                <Radio :label="1" disabled>紧急</Radio>
-              </RadioGroup>
-            </FormItem>
-          </Col>
-          </Form>
-        </Row>
-      </Col>
-
-      <!-- 表单申请信息 -->
-      <Col class="form-row" span="24">
-        <Row>
-          <Col class="form-col" :xs="24" :sm="8" :md="8" :lg="8">
-            <p>申请人：{{formData.userName}}</p>
-          </Col>
-
-          <Col class="form-col" :xs="24" :sm="8" :md="8" :lg="8">
-            <p>申请部门：{{formData.department}}</p>
-          </Col>
-
-          <Col class="form-col" :xs="24" :sm="8" :md="8" :lg="8">
-            <p>申请日期：{{formData.date}}</p>
-          </Col>
-        </Row>
-      </Col>
-
-      <!-- 表单元素渲染区域 -->
-      <Col span="24">
-          <form-builder-grid ref="formBuilder"></form-builder-grid>
-      </Col>
-    </Col>
-
-    <!-- 表单侧边栏 -->
-    <Col span="8">
-      <form-builder-sidebar :formElementList="formElementList" @save="getForm({action:true})"
-      @clear="clearFormData">
-      </form-builder-sidebar>
+      <!-- 阅览表单 -->
+      <reading v-if="mode === 'reading'" :baseData="nowBaseData" :renderData="nowRenderData"
+      :keyValue="nowKeyValue"></reading>
     </Col>
   </Row>
 </template>
 
 <style lang="scss" scoped>
-// =============== 导入样式文件 ===============
-@import "./styles/baseStyles";
-@import "./styles/commonStyles";
 
-
-// 表单编号
-.form-number-wrap {
-  padding: $colPadding;
-  padding-bottom: 0;
-}
-.form-number {
-  text-align: left;
-}
-
-// 表单类型
-.form-type-wrap {
-  height: 100px;
-  padding: $colPadding;
-  line-height: 65px;
-  text-align: center;
-  font-size: 16px;
-  > h1 {
-    font-weight: normal;
-  }
-}
-
-// 标题、紧急程度
-.form-status-wrap,
-.form-title-wrap {
-  padding: $colPadding;
-  .ivu-form-item {
-    margin-bottom: 0;
-  }
-}
-
-// 表单行
-.form-row {
-  border: 1px solid #ccc;
-  border-bottom: none;
-  &:last-child {
-    border: 1px solid #ccc;
-  }
-   // 表单列
-  .form-col {
-    padding: $colPadding;
-    border-right: 1px solid #ccc;
-    &:last-child {
-      border-right: none;
-    }
-  }
-
-  // 媒体查询：定义在特定大小设备下的样式
-  @media screen and (max-width: 982px) {
-    .form-col {
-      padding: $colPadding;
-      border: 0;
-    }
-  }
-}
 </style>
 
 <script>
 // =============== 导入模块 ===============
 // 配置文件
 import config from './config';
-// 栅格系统
-import formBuilderGrid from './componentes/formBuilderGrid';
-// 侧边栏
-import formBuilderSidebar from './componentes/formBuilderSidebar';
+// 构建表单
+import builder from './componentes/builder';
+// 渲染表单
+import render from './componentes/render';
+// 阅览表单
+import reading from './componentes/reading';
 
 export default {
   // 本组件名
@@ -152,21 +45,47 @@ export default {
 
   // 应用组件
   components: {
-    formBuilderGrid,
-    formBuilderSidebar
+    builder,
+    render,
+    reading
   },
 
   // 自定义属性
   props: {
+    // 模式
+    mode: {
+      default: ""
+    },
     // 表单类型
     baseData: {
       default:function () {
         return {
           number: "自动获取",
-            formTypeName:'',
-            formType:''
+          formTypeName:'',
+          formType:''
         }
       }
+    },
+    // 渲染数据
+    renderData: {
+      default: Array
+    },
+    // 表单键值对
+    keyValue: {
+      default: Object
+    }
+  },
+
+  // 计算属性
+  computed: {
+    nowBaseData: function () {
+      return this.baseData
+    },
+    nowRenderData: function () {
+      return this.renderData
+    },
+    nowKeyValue: function () {
+      return this.keyValue
     }
   },
 
@@ -181,27 +100,46 @@ export default {
           department:"自动获取",
           date:"自动获取",
       },
-
-      // 表单元素
-      formElementList: config.formElement
+      // 配置信息
+      config: config
     }
   },
 
   // 方法
   methods: {
-    // 清空表单
-    clearFormData() {
-      this.$refs.formBuilder.clearBuilderData();
+    // 构建模式：清空表单构建器数据
+    clearFormBuilderData() {
+      if (this.mode === config.mode.builder) {
+        this.$refs.builder.clearEvent();
+      }
     },
 
-    // 获取构建好的表单数据
-    getForm(params){
-      if (params.action) {
-        return this.$refs.formBuilder.getBuilderData();
-      } else if(params.data) {
-        this.$emit("save", this.baseData, params.data);
+    // 构建模式&渲染模式：发送表单构建器数据
+    sendFormBuilderData(params) {
+      // 自定义事件：表单构建器-构建模式，保存数据
+      if (this.mode === config.mode.builder) {
+        this.$emit("on-save", params)
       }
-    }
+
+      // 自定义事件：表单构建器-渲染模式，发送当前填写的表单数据
+      if (this.mode === config.mode.render) {
+        this.$emit("on-submit", params)
+      }
+    },
+
+    // 渲染模式：重置表单验证状态
+    resetFields(){
+      if (this.mode === config.mode.render) {
+        this.$refs.render.resetFields();
+      }
+    },
+
+    // 渲染模式：提交表单
+    submit(params){
+      if (this.mode === config.mode.render) {
+        this.$refs.render.handleSubmit();
+      }
+    },
   }
 }
 </script>

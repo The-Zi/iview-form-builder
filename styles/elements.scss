@@ -1,0 +1,39 @@
+/*
+ * @Author: The-Zi
+ * @Date: 2018-07-18 10:30:29
+ * @Last Modified by: The-Zi
+ * @Last Modified time: 2018-07-18 10:37:04
+ */
+
+
+// =============== 导入样式 ===============
+@import "./base.scss";
+
+
+// =============== 表单组件样式 ===============
+// 表单组件外包围
+.iview-form-builder-modules-wrap {
+    width: 100%;
+
+    // 表单组件操作
+    .form-modules-action {
+        position: absolute;
+        right: 0;
+        z-index: 999;
+
+        // 操作
+        >.action {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        // 操作
+        .form-modules-detailed-action {
+            padding-top: $padding;
+            text-align: center;
+        }
+    }
+}

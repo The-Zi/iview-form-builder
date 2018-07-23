@@ -2,7 +2,7 @@
  * @Author: chenzicong
  * @Date: 2018-04-17 16:35:42
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-06-06 10:50:53
+ * @Last Modified time: 2018-07-11 16:41:11
  */
 
 <template>
@@ -216,7 +216,7 @@ export default {
         // 上传失败
         error(error, file, fileList){
             this.fileRemark = "";
-            console.log("附件上传失败：" + error);
+            // console.log("附件上传失败：" + error);
         },
 
         // 删除文件
@@ -404,8 +404,8 @@ export default {
 
 <style lang="scss" scoped>
 // =============== 导入样式文件 ===============
-@import "./styles/baseStyles";
-@import "./styles/commonStyles";
+@import "./styles/base";
+@import "./styles/common";
 
 
 // 附件上传组件

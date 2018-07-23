@@ -1,0 +1,120 @@
+/*
+ * @Author: The-Zi
+ * @Date: 2018-07-10 17:19:04
+ * @Last Modified by: The-Zi
+ * @Last Modified time: 2018-07-18 10:50:29
+ */
+
+
+// =============== 导入样式 ===============
+@import "./base.scss";
+
+
+// =============== 栅格系统样式 ===============
+// 表单项渲染区域
+.form-grid-wrap {
+  min-height: $colMinH;
+
+  // 表单单元格行数增加
+  .form-grid-row-action {
+    text-align: center;
+    padding-top: $padding;
+  }
+
+  // 表单栅格行
+  .form-grid-row {
+    border: 1px solid #ccc;
+    border-bottom: 0;
+    &:last-child {
+      border: 1px solid #ccc;
+    }
+
+    // 表单行操作
+    .form-grid-col-activer {
+      position: absolute;
+      top: 0;
+      right: -25px;
+      width: 20px;
+      height: 60px;
+      padding: $padding;
+      .activer {
+        display: block;
+        width: 20px;
+        height: 20px;
+        margin-bottom: 5px;
+        cursor: pointer;
+      }
+    }
+
+    // 表单行外包围
+    .form-grid-col-wrap {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+      flex-wrap: wrap;
+
+      // 表单栅格列
+      .form-grid-col {
+        display: flex;
+        flex-direction: column;
+        padding: $padding;
+        min-height: $colMinH;
+        // 表格边框
+        border-right: 1px solid #ccc;
+        &:last-child {
+          border-right: none;
+        }
+
+        // 帮助信息
+        .form-grid-col-tips {
+          height: 100%;
+          padding: 0 $padding;
+          color: #b7b7b7;
+          text-align: center;
+          font-size: 14px;
+          line-height: $colMinH;
+          border-radius: 4px;
+          border: 2px dotted #ccc;
+        }
+
+        // 表单渲染区
+        .form-grid-render-zoon {
+          height: 100%;
+          // 表单渲染操作
+          .form-grid-render-activer {
+            height: 100%;
+            border: 1px dashed #adadad;
+          }
+
+          // 表单组件外包围
+          .iview-form-builder-modules-wrap {
+            width: 100%;
+
+            // 表单组件操作
+            .form-modules-action {
+              position: absolute;
+              right: 0;
+              z-index: 999;
+
+              // 操作
+              >.action {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                margin-left: 5px;
+                cursor: pointer;
+              }
+            }
+
+            // 增减明细操作
+            .form-modules-detailed-action {
+              padding-top: $padding;
+              text-align: center;
+            }
+          }
+        }
+      }
+    }
+  }
+}

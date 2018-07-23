@@ -1,0 +1,49 @@
+/*
+ * @Author: The-Zi
+ * @Date: 2018-05-30 17:53:52
+ * @Last Modified by: The-Zi
+ * @Last Modified time: 2018-07-18 16:06:09
+ */
+
+
+// =============== 导入样式 ===============
+@import "./base.scss";
+
+
+// =============== 通用样式 ===============
+// 表单行
+.iview-form-builder-row {
+  border: 1px solid #ccc;
+  border-bottom: none;
+  &:last-child {
+    border: 1px solid #ccc;
+  } // 表单列
+  .iview-form-builder-col {
+    padding: $padding;
+    // border-right: 1px solid #ccc;
+    // &:last-child {
+    //   border-right: none;
+    // }
+  }
+}
+
+// 表单组件外包围
+.iview-form-builder-modules-wrap {
+  // 增减明细操作
+  .form-modules-detailed-action {
+    padding-top: $padding;
+    text-align: center;
+  }
+}
+
+// 文字超出显示省略号
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 状态颜色
+.status-error {
+  color: red;
+}

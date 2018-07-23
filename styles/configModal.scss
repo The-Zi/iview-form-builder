@@ -1,0 +1,53 @@
+/*
+ * @Author: The-Zi
+ * @Date: 2018-07-10 17:19:04
+ * @Last Modified by: The-Zi
+ * @Last Modified time: 2018-07-18 10:39:22
+ */
+
+
+// =============== 导入样式 ===============
+@import "./base.scss";
+
+
+// =============== 表单组件配置对话框样式 ===============
+// 对话框标题
+.congfig-modal-header {
+  font-weight: normal;
+  font-size: 16px;
+}
+
+// 计算公式配置
+.config-formulas-wrap {
+  // 配置项
+  .config-formulas-item {
+    padding-bottom: $padding;
+    &:last-child {
+      padding-bottom: 0;
+    } // 计算公式显示区域
+    .formulas-show-zoon {
+      min-height: 92px;
+      padding: 10px;
+      border: 1px solid #dfdfdf;
+      margin-bottom: 15px;
+      font-size: 14px;
+    } // 回删计算公式
+    .formulas-minus {
+      text-align: right;
+      font-size: 18px;
+      line-height: 18px;
+      color: #ccc;
+      margin-right: 10px;
+      cursor: pointer;
+    } // 清空计算公式
+    .formulas-clear {
+      font-size: 15px;
+      line-height: 15px;
+      color: #f28172;
+      cursor: pointer;
+    }
+  } // 数字键盘
+  .number-keyboard p {
+    margin-bottom: 3px;
+  }
+}
