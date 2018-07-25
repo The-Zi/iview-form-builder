@@ -15,6 +15,7 @@ const config = {
     // 模式
     mode: {
         builder: 'builder',
+        builderMobile: 'builder-mobile',
         render: 'render',
         detailed: 'detailed'
     },

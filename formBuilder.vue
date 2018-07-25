@@ -9,35 +9,34 @@
   <Row>
     <Col span="24">
       <!-- 构建表单 -->
-      <builder v-if="mode === 'builder'" ref="builder" :baseData="nowBaseData"
-      @saveEvent="sendFormBuilderData">
+      <builder v-if="nowMode === config.mode.builder || nowMode === config.mode.builderMobile" ref="builder"
+      :mode="mode" :baseData="nowBaseData" @saveEvent="sendFormBuilderData">
       </builder>
 
       <!-- 渲染表单 -->
-      <render v-if="mode === 'render'" ref="render" :baseData="nowBaseData" :renderData="nowRenderData"
-      @submitEvent="sendFormBuilderData"></render>
+      <render v-if="nowMode === config.mode.render" ref="render" :baseData="nowBaseData"
+      :renderData="nowRenderData" @submitEvent="sendFormBuilderData"></render>
 
       <!-- 阅览表单 -->
-      <reading v-if="mode === 'reading'" :baseData="nowBaseData" :renderData="nowRenderData"
+      <reading v-if="nowMode === config.mode.reading" :baseData="nowBaseData" :renderData="nowRenderData"
       :keyValue="nowKeyValue"></reading>
     </Col>
   </Row>
 </template>
 
 <style lang="scss" scoped>
-
 </style>
 
 <script>
 // =============== 导入模块 ===============
 // 配置文件
-import config from './config';
+import config from "./config";
 // 构建表单
-import builder from './componentes/builder';
+import builder from "./componentes/builder";
 // 渲染表单
-import render from './componentes/render';
+import render from "./componentes/render";
 // 阅览表单
-import reading from './componentes/reading';
+import reading from "./componentes/reading";
 
 export default {
   // 本组件名
@@ -58,12 +57,12 @@ export default {
     },
     // 表单类型
     baseData: {
-      default:function () {
+      default: function() {
         return {
           number: "自动获取",
-          formTypeName:'',
-          formType:''
-        }
+          formTypeName: "",
+          formType: ""
+        };
       }
     },
     // 渲染数据
@@ -78,14 +77,17 @@ export default {
 
   // 计算属性
   computed: {
-    nowBaseData: function () {
-      return this.baseData
+    nowMode: function() {
+      return this.mode;
     },
-    nowRenderData: function () {
-      return this.renderData
+    nowBaseData: function() {
+      return this.baseData;
     },
-    nowKeyValue: function () {
-      return this.keyValue
+    nowRenderData: function() {
+      return this.renderData;
+    },
+    nowKeyValue: function() {
+      return this.keyValue;
     }
   },
 
@@ -93,16 +95,16 @@ export default {
   data() {
     return {
       // 占位用表单数据
-      formData:{
-          number:"自动获取",
-          status:"0",
-          userName:"自动获取",
-          department:"自动获取",
-          date:"自动获取",
+      formData: {
+        number: "自动获取",
+        status: "0",
+        userName: "自动获取",
+        department: "自动获取",
+        date: "自动获取"
       },
       // 配置信息
       config: config
-    }
+    };
   },
 
   // 方法
@@ -118,28 +120,28 @@ export default {
     sendFormBuilderData(params) {
       // 自定义事件：表单构建器-构建模式，保存数据
       if (this.mode === config.mode.builder) {
-        this.$emit("on-save", params)
+        this.$emit("on-save", params);
       }
 
       // 自定义事件：表单构建器-渲染模式，发送当前填写的表单数据
       if (this.mode === config.mode.render) {
-        this.$emit("on-submit", params)
+        this.$emit("on-submit", params);
       }
     },
 
     // 渲染模式：重置表单验证状态
-    resetFields(){
+    resetFields() {
       if (this.mode === config.mode.render) {
         this.$refs.render.resetFields();
       }
     },
 
     // 渲染模式：提交表单
-    submit(params){
+    submit(params) {
       if (this.mode === config.mode.render) {
         this.$refs.render.handleSubmit();
       }
-    },
+    }
   }
-}
+};
 </script>

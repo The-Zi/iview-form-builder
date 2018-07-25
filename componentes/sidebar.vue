@@ -12,11 +12,13 @@
       <!-- 表单构建器：侧边栏 -->
       <div class="iview-form-builder-sidebar">
         <!-- 表单构建器：切换显示设备 -->
-        <Button class="builder-decive" v-for="(device, index) in deviceList" :key="'device' + index"
-        v-if="device.status === true" :type="activerDevice === device.type ? 'info' : 'ghost'"
-        @click.native="deviceToggle(device.type)" shape="circle" long :title="device.desc">
-          <Icon :type="device.icon.type" :size="device.icon.size"></Icon>&nbsp;&nbsp;{{device.title}}
-        </Button>
+        <template v-if="nowMode === config.mode.builder && nowDevice === config.devices.desktop">
+          <Button class="builder-decive" v-for="(device, index) in deviceList" :key="'device' + index"
+          v-if="device.status === true" :type="activerDevice === device.type ? 'info' : 'ghost'"
+          @click.native="deviceToggle(device.type)" shape="circle" long :title="device.desc">
+            <Icon :type="device.icon.type" :size="device.icon.size"></Icon>&nbsp;&nbsp;{{device.title}}
+          </Button>
+        </template>
 
 
         <!-- 表单构建器：表单元素 -->
@@ -58,146 +60,161 @@
 
 
 <script>
-  export default {
-    // 组件名
-    name: "iview-form-builder-sidebar",
+// =============== 导入模块 ===============
+// 配置文件
+import config from "../config";
 
-    // 组件属性
-    props:{
-      // 设备
-      device: {
-        default: function () {
-          return ["desktop", "mobile"]
-        }
-      },
+export default {
+  // 组件名
+  name: "iview-form-builder-sidebar",
 
-      // 元素列表
-      formElementList: {
-        default: Object
-      }
+  // 组件属性
+  props: {
+    mode: {
+      default: config.mode.builder
+    },
+    // 设备
+    device: {
+      default: config.devices.desktop
     },
 
-    // 数据
-    data() {
-      return {
-        // 默认活动设备
-        activerDevice: 'desktop',
-        // 设备列表
-        deviceList: {
-         desktop: {
-            title: "Desktop",
-            type: "desktop",
-            desc: "桌面设备",
-            status: false,
-            icon: {
-              type: "android-desktop",
-              size: 14
-            }
-          },
-          mobile: {
-            title: "Mobile",
-            type: "mobile",
-            desc: "移动设备",
-            status: false,
-            icon: {
-              type: "iphone",
-              size: 14
-            }
+    // 元素列表
+    formElementList: {
+      default: Object
+    }
+  },
+
+  // 数据
+  data() {
+    return {
+      // 配置信息
+      config: config,
+      // 默认活动设备
+      activerDevice: "desktop",
+      // 设备列表
+      deviceList: {
+        desktop: {
+          title: "Desktop",
+          type: "desktop",
+          desc: "桌面设备",
+          status: false,
+          icon: {
+            type: "android-desktop",
+            size: 14
+          }
+        },
+        mobile: {
+          title: "Mobile",
+          type: "mobile",
+          desc: "移动设备",
+          status: false,
+          icon: {
+            type: "iphone",
+            size: 14
           }
         }
       }
+    };
+  },
+
+  // 计算属性
+  computed: {
+    // 侧边栏模式
+    nowMode: function() {
+      return this.mode
     },
-
-    // 计算属性
-    computed: {
-      // 表单元素列表
-      elementList: function () {
-        if (this.formElementList instanceof Object) {
-          return this.formElementList;
-        } else {
-          return null
-        }
-      }
+    // 设备平台
+    nowDevice: function () {
+      return this.device
     },
-
-    // 方法
-    methods: {
-      say(){
-        // console.log(231)
-      },
-      // 切换显示设备
-      deviceToggle:function (params) {
-        this.activerDevice = params;
-
-        // 触发设备切换事件
-        this.$emit("deviceToggle", params);
-      },
-
-      // 设置使用那些设备
-      setDevice(params){
-        if (Array.isArray(params)) {
-          if (params.length > 1) {
-            // 临时对象，用于修改设备列表顺序
-            let tempObject = {};
-
-            // 选择设备
-            for (let index = 0; index < params.length; index++) {
-              if (this.deviceList[params[index]]) {
-                // 将设备属性的第一个元素设置默认设备
-                if (index === 0) {
-                  this.activerDevice = this.deviceList[params[index]].type;
-                  tempObject[this.activerDevice] = this.deviceList[params[index]];
-                }
-
-                // 显示指定的设备
-                this.deviceList[params[index]].status = true;
-              }
-            }
-
-            // 修改设备列表顺序，将传进来的设备数据第一个设为默认并提前到第一
-            this.deviceList = Object.assign({},tempObject,this.deviceList);
-
-          // 不显示设备选项
-          } else {
-            for (const key in this.deviceList) {
-              if (this.deviceList.hasOwnProperty(key)) {
-                this.deviceList[key].status = false;
-              }
-            }
-          }
-        }
-      },
-
-      // 设置拖动组件时传递的数据
-      drag: function(params, $event){
-        $event.dataTransfer.setData("Text", params.type);
-      },
-
-      // 保存构建的表单数据事件
-      saveEvent: function () {
-        // 自定义事件：保存构建的表单数据
-        this.$emit("save");
-      },
-
-      // 清空构建器数据事件
-      clearEvent: function () {
-        // 自定义事件：清空构建器数据事件
-        this.$emit("clear");
-      },
-    },
-
-    // 生命周期钩子：组件安装完毕
-    mounted: function () {
-      // 设置默认设备
-      this.setDevice(this.device);
-    },
-
-    // 监测数据变化
-    watch: {
-      // 实时更新设备数据
-      device: function (newVal, oldVal) {
-        this.setDevice(newVal);
+    // 表单元素列表
+    elementList: function() {
+      if (this.formElementList instanceof Object) {
+        return this.formElementList;
+      } else {
+        return null
       }
     }
+  },
+
+  // 方法
+  methods: {
+    say() {
+      // console.log(231)
+    },
+    // 切换显示设备
+    deviceToggle: function(params) {
+      this.activerDevice = params;
+
+      // 触发设备切换事件
+      this.$emit("deviceToggle", params);
+    },
+
+    // 设置使用那些设备
+    setDevice(params) {
+      if (Array.isArray(params)) {
+        if (params.length > 1) {
+          // 临时对象，用于修改设备列表顺序
+          let tempObject = {};
+
+          // 选择设备
+          for (let index = 0; index < params.length; index++) {
+            if (this.deviceList[params[index]]) {
+              // 将设备属性的第一个元素设置默认设备
+              if (index === 0) {
+                this.activerDevice = this.deviceList[params[index]].type;
+                tempObject[this.activerDevice] = this.deviceList[params[index]];
+              }
+
+              // 显示指定的设备
+              this.deviceList[params[index]].status = true;
+            }
+          }
+
+          // 修改设备列表顺序，将传进来的设备数据第一个设为默认并提前到第一
+          this.deviceList = Object.assign({}, tempObject, this.deviceList);
+
+          // 不显示设备选项
+        } else {
+          for (const key in this.deviceList) {
+            if (this.deviceList.hasOwnProperty(key)) {
+              this.deviceList[key].status = false;
+            }
+          }
+        }
+      }
+    },
+
+    // 设置拖动组件时传递的数据
+    drag: function(params, $event) {
+      $event.dataTransfer.setData("Text", params.type);
+    },
+
+    // 保存构建的表单数据事件
+    saveEvent: function() {
+      // 自定义事件：保存构建的表单数据
+      this.$emit("save");
+    },
+
+    // 清空构建器数据事件
+    clearEvent: function() {
+      // 自定义事件：清空构建器数据事件
+      this.$emit("clear");
+    }
+  },
+
+  // 生命周期钩子：组件安装完毕
+  mounted: function() {
+    // 设置默认设备
+    this.setDevice(this.device);
+  },
+
+  // 监测数据变化
+  watch: {
+    // 实时更新设备数据
+    device: function(newVal, oldVal) {
+      this.setDevice(newVal);
+    }
   }
+};
 </script>
