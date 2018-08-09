@@ -20,13 +20,20 @@
 
 <template>
   <!-- 表单构建器：栅格系统 -->
-  <Row class="form-grid-wrap">
-    <Form ref="tempForm" :model="tempForm" inline>
+  <Row :class="{
+    'form-grid-wrap': true,
+    'form-grid-wrap-mobile': nowDevice === devicesOption.mobile && nowMode !== modeOption.detailed,
+  }">
+    <Form ref="tempForm" :model="tempForm" label-position="top" inline>
       <!-- 表单行 -->
-      <Col class="form-grid-row" v-for="(row, rowIndex) in modulesData" :key="rowIndex" span="24">
+      <Col span="24" v-for="(row, rowIndex) in modulesData" :key="rowIndex"
+      :class="{
+        'form-grid-row': true,
+        'form-grid-row-mobile': nowDevice === devicesOption.mobile && nowMode !== modeOption.detailed
+      }">
         <!-- 表单列增减 -->
         <div class="form-grid-col-activer"
-        v-if="nowMode === modeOption.builder && devices === devicesOption.desktop">
+        v-if="nowMode === modeOption.builder && nowDevice === devicesOption.desktop">
           <!-- 刪除列 -->
           <Icon @click.native="gridColMinus(rowIndex)" class="activer" size="16" color="#a7a7a7" title="删除列"
           type="minus"></Icon>
@@ -37,18 +44,26 @@
         </div>
         <!-- 表单列 -->
         <Row class="form-grid-col-wrap">
-          <Col class="form-grid-col" v-for="(col, colIndex) in row"
-           :span="setColSize({rowIndex:rowIndex, nowIndex:colIndex})" :key="colIndex">
+          <Col :class="{'form-grid-col': true,
+          'form-grid-col-mobile': nowMode !== modeOption.detailed && nowDevice === devicesOption.mobile}"
+          :span="setColSize({rowIndex:rowIndex, nowIndex:colIndex})"
+          v-for="(col, colIndex) in row" :key="colIndex">
+
+            <!-- 拖动放置组件区域 -->
             <div v-activer class="form-grid-render-zoon" @dragover="allowDrop"
              @drop="drop({rowIndex: rowIndex,colIndex:colIndex}, $event)">
+
                 <!-- =============== 提示信息 =============== -->
-                <p class="form-grid-col-tips" v-if="!col || col.length <= 0">
-                  可拖入多个组件<span v-if="nowMode === modeOption.detailed">（不包含明细组件）</span>
-                </p>
+                <div :class="{'form-grid-col-tips': true, 'form-grid-col-tips-mobile': nowMode === modeOption.detailed}" v-if="!col || col.length <= 0">
+                <!-- <p :class="{
+                'form-grid-col-tips': nowMode === modeOption.detailed && nowDevice === devicesOption.mobile,
+                'form-grid-col-tips-mobile' : nowDevice === devicesOption.mobile}" v-if="!col || col.length <= 0"> -->
+                  <p>可拖入多个组件<br><span v-if="nowMode === modeOption.detailed">（不包含明细组件）</span></p>
+                </div>
 
                 <!-- =============== 表单组件渲染 =============== -->
                 <formElements
-                :mode="mode"
+                :mode="nowMode"
                 :modulesData="{rowIndex: rowIndex,colIndex:colIndex, col: col}"
                 @delete="delModule"
                 @setting="editFormElement"
@@ -64,7 +79,7 @@
                     <FormItem class="iview-form-builder-modules-wrap" v-if="modules.type === module.detailed.type"
                     :required="modules.require" :label="modules.label">
                         <!-- 操作组件 -->
-                        <div class="form-modules-action" v-if="nowMode === modeOption.builder">
+                        <div class="form-modules-action" v-if="nowMode !== modeOption.detailed">
                           <!-- 设置 -->
                           <Icon class="action" size="16" color="#a7a7a7" title="设置"
                           @click.native="editFormElement({rowIndex: rowIndex, colIndex: colIndex,
@@ -83,7 +98,7 @@
                         <!-- 通过递归当前组件，实现表单组件-明细 -->
                         <!-- <iview-form-builder-grid
                         :mode="modeOption.detailed"
-                        :devices="nowDevices"
+                        :device="nowDevice"
                         :data="handleDetailData(modules)"
                         @addModuels="addDetailElement(modules, $event)"
                         @setModuels="setDetailElement(modules, $event)"
@@ -101,7 +116,7 @@
                         <!-- ========== 表单组件-明细 v1.0.0：在同一明细内自增原始模板数据 ========== -->
                         <iview-form-builder-grid
                         :mode="modeOption.detailed"
-                        :devices="nowDevices"
+                        :device="nowDevice"
                         :data="handleDetailData(modules)"
                         :calculator="calculatorList"
                         :countFormula="countFormulaList"
@@ -116,14 +131,17 @@
 
                         <!-- 增减明细 -->
                         <div class="form-modules-detailed-action">
-                            <ButtonGroup>
+                            <Button type="primary" icon="plus" long @click.native="plusDetailModuels(modules)">
+                              {{modules.actionPlus}}
+                            </Button>
+                            <!-- <ButtonGroup>
                                 <Button type="ghost" icon="minus" @click.native="minusDetailModuels(modules)">
                                   {{modules.actionMinus}}
                                 </Button>
                                 <Button type="ghost" icon="plus" @click.native="plusDetailModuels(modules)">
                                   {{modules.actionPlus}}
                                 </Button>
-                            </ButtonGroup>
+                            </ButtonGroup> -->
                         </div>
                     </FormItem>
                   </div>
@@ -136,9 +154,9 @@
 
     <!-- =============== 栅格系统：增减行数 =============== -->
     <Col class="form-grid-row-action" span="24"
-    v-if="nowMode === modeOption.builder">
+    v-if="nowMode === modeOption.builder && nowDevice !== devicesOption.mobile">
       <ButtonGroup shape="circle">
-          <Button type="ghost" @click.native="rowMinus" title="删除行">
+          <Button type="default" @click.native="rowMinus" title="删除行">
             &nbsp;
             &nbsp;
             &nbsp;
@@ -147,7 +165,7 @@
             &nbsp;
             &nbsp;
           </Button>
-          <Button type="ghost" @click.native="rowPlus" title="增加行">
+          <Button type="default" @click.native="rowPlus" title="增加行">
             &nbsp;
             &nbsp;
             &nbsp;
@@ -510,18 +528,18 @@ export default {
 
   // 自定义属性
   props: {
-    // 显示设备
-    devices: {
-      default: config.devices.desktop
-    },
-
     // 组件模式
     mode: {
       default: config.mode.builder
     },
 
+    // 显示设备
+    device: {
+      default: config.devices.desktop
+    },
+
     // 渲染用表单数据
-    data: {
+    renderData: {
       default: Array
     },
 
@@ -533,6 +551,11 @@ export default {
     // 计算公式
     countFormula: {
       default: Object
+    },
+
+    // 生命周期钩子：在删除组件前
+    beforDeleteModule: {
+      default: Function
     }
   },
 
@@ -577,6 +600,7 @@ export default {
       modeOption: config.mode,
       // 表单组件配置
       module: config.formElement,
+      moduleGroups: config.formElementGroups,
       // 表单组件数据，是一个三维数组
       // 第一维是整个表单结构
       // 第二维是表单布局结构中的行
@@ -632,8 +656,8 @@ export default {
       return this.mode;
     },
     // 当前模式
-    nowDevices: function() {
-      return this.devices;
+    nowDevice: function() {
+      return this.device;
     },
     // 当前的可计算对象
     nowCalculatorList: function() {
@@ -753,8 +777,8 @@ export default {
       // 配置并添加表单组件
       switch (module) {
         // 预算
-        case this.module.budget.type:
-          tempItem.title = this.module.budget.title;
+        case this.moduleGroups.budget.type:
+          tempItem.title = this.moduleGroups.budget.title;
           tempItem.label = tempItem.title + "：";
           tempItem.value = "";
           tempItem.name = "is_excess_budget";
@@ -1797,6 +1821,7 @@ export default {
 
     // 删除组件
     delModule: function(params) {
+      if (this.beforDeleteModule(params.module.id)) {
       let row = params.rowIndex;
       let col = params.colIndex;
       let m = params.mIndex;
@@ -1826,6 +1851,7 @@ export default {
 
         // 自定义事件：删除可计算对象
         this.$emit("delCalculator", params.module.id);
+      }
       }
     },
 
@@ -1924,14 +1950,14 @@ export default {
 
   // 生命周期钩子： 创建组件
   created: function() {
-    if (
-      this.nowMode === this.modeOption.detailed &&
-      Array.isArray(this.data) &&
-      this.data.length > 0 &&
-      this.data[0][0]
-    ) {
-      this.modulesData = this.data;
-    }
+    // if (
+    //   this.nowMode === this.modeOption.detailed &&
+    //   Array.isArray(this.data) &&
+    //   this.data.length > 0 &&
+    //   this.data[0][0]
+    // ) {
+    //   this.modulesData = this.data;
+    // }
 
     // 表单构建器，只有在渲染模式下才会根据 data 属性渲染表单
     // if (this.nowMode === this.modeOption.render &&  Array.isArray(this.data) &&
@@ -1965,7 +1991,7 @@ export default {
     },
 
     // 更新渲染数据
-    data: function(newValue, oldValue) {
+    renderData: function(newValue, oldValue) {
       this.modulesData = newValue;
     }
   }

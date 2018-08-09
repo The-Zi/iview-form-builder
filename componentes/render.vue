@@ -21,8 +21,7 @@
             <h1>{{formBase.applyCategoryName}}</h1>
           </Col>
 
-          <Form ref="baseDataForm" :model="formBase" :rules="baseDataRule" :label-width="100"
-           label-position="left">
+          <Form ref="baseDataForm" :model="formBase" :rules="baseDataRule" label-position="top" inline>
           <!-- 标题 -->
           <Col class="form-title-wrap" span="24">
             <FormItem label="标题：" prop="title">
@@ -81,7 +80,7 @@
                   <div class="form-grid-render-zoon">
                     <!-- =============== 表单组件渲染 =============== -->
                     <formElements
-                    :mode="modeOption.render"
+                    :mode="modeOption.renderDetailed"
                     :modulesData="{rowIndex: rowIndex,colIndex:colIndex, col: col}"
                     :rowIndex="rowIndex"
                     @moneyFormat="moneyFormat"

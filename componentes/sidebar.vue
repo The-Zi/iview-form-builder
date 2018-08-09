@@ -7,48 +7,64 @@
 
 
 <template>
-  <Row>
+  <Row class="iview-form-builder-sidebar-wrap">
+    <!-- 菜单导航 -->
+    <Col span="24">
+      <Menu mode="horizontal" theme="light" active-name="single" @on-select="toogleModulesGroup">
+          <MenuItem name="single">
+              <Icon type="ios-paper"></Icon>
+              控件库
+          </MenuItem>
+          <MenuItem name="suite">
+              <Icon type="settings"></Icon>
+              套件库
+          </MenuItem>
+      </Menu>
+    </Col>
+
+    <!-- 表单元素&操作按钮 -->
     <Col span="24">
       <!-- 表单构建器：侧边栏 -->
       <div class="iview-form-builder-sidebar">
-        <!-- 表单构建器：切换显示设备 -->
-        <template v-if="nowMode === config.mode.builder && nowDevice === config.devices.desktop">
-          <Button class="builder-decive" v-for="(device, index) in deviceList" :key="'device' + index"
-          v-if="device.status === true" :type="activerDevice === device.type ? 'info' : 'ghost'"
-          @click.native="deviceToggle(device.type)" shape="circle" long :title="device.desc">
-            <Icon :type="device.icon.type" :size="device.icon.size"></Icon>&nbsp;&nbsp;{{device.title}}
-          </Button>
+        <!-- 表单构建器：表单元素 -->
+        <!-- 控件库 -->
+        <template v-if="singleShow">
+          <div class="builder-form-element" v-for="(element, index) in nowModules.modules" :key="element + index"
+          draggable="true" @dragstart="drag({type: element.type}, $event)">
+            <div class="builder-form-element-content">
+              <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;
+              {{element.title}}
+            </div>
+          </div>
         </template>
 
-
-        <!-- 表单构建器：表单元素 -->
-        <div class="builder-form-element">
-          <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;套件
-        </div>
-
-        <div class="builder-form-element" v-for="(element, index) in elementList" :key="element + index"
-        draggable="true" @dragstart="drag({type: element.type}, $event)">
-          <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;
-          {{element.title}}
-        </div>
-
-
-        <!-- 表单构建器：构建操作 -->
-        <div class="builder-active">
-          <!-- 清空构建器内容 -->
-          <div class="active-item">
-            <Button type="ghost" shape="circle" size="large" icon="close"
-            @click="clearEvent" title="清空"></Button>
+        <!-- 套件库 -->
+        <template v-if="suiteShow">
+          <div class="builder-form-element" v-for="(element, index) in nowModules.groups" :key="element + index"
+          draggable="true" @dragstart="drag({type: element.type}, $event)">
+            <div class="builder-form-element-content">
+              <Icon type="ios-browsers-outline" size="14"></Icon>&nbsp;
+              {{element.title}}
+            </div>
           </div>
-
-          <!-- 保存构建器数据 -->
-          <div class="active-item">
-            <Button type="success" shape="circle" size="large" icon="checkmark"
-            @click="saveEvent" title="保存"></Button>
-          </div>
-        </div>
+        </template>
       </div>
     </Col>
+
+    <!-- <Col span="24"> -->
+        <!-- 表单构建器：构建操作 -->
+        <!-- <div class="iview-form-builder-sidebar-active"> -->
+          <!-- 清空构建器内容 -->
+          <!-- <div class="active-item">
+            <Button type="ghost" size="large" long @click="clearEvent" title="清空">清空</Button>
+          </div> -->
+
+          <!-- 保存构建器数据 -->
+          <!-- <div class="active-item">
+            <Button type="primary" size="large" long @click="saveEvent" title="保存">保存</Button>
+          </div>
+        </div> -->
+    <!-- </Col> -->
   </Row>
 </template>
 
@@ -79,8 +95,13 @@ export default {
     },
 
     // 元素列表
-    formElementList: {
-      default: Object
+    modules: {
+      default: function () {
+        return {
+          modules: config.formElement,
+          groups: config.formElementGroups
+        }
+      }
     }
   },
 
@@ -91,29 +112,10 @@ export default {
       config: config,
       // 默认活动设备
       activerDevice: "desktop",
-      // 设备列表
-      deviceList: {
-        desktop: {
-          title: "Desktop",
-          type: "desktop",
-          desc: "桌面设备",
-          status: false,
-          icon: {
-            type: "android-desktop",
-            size: 14
-          }
-        },
-        mobile: {
-          title: "Mobile",
-          type: "mobile",
-          desc: "移动设备",
-          status: false,
-          icon: {
-            type: "iphone",
-            size: 14
-          }
-        }
-      }
+      // 控件库
+      singleShow: true,
+      // 套件库
+      suiteShow: false
     };
   },
 
@@ -128,60 +130,27 @@ export default {
       return this.device
     },
     // 表单元素列表
-    elementList: function() {
-      if (this.formElementList instanceof Object) {
-        return this.formElementList;
-      } else {
-        return null
-      }
+    nowModules: function() {
+      return this.modules
     }
   },
 
   // 方法
   methods: {
-    say() {
-      // console.log(231)
-    },
-    // 切换显示设备
-    deviceToggle: function(params) {
-      this.activerDevice = params;
+    // 切换组件库
+    toogleModulesGroup(params){
+      switch (params) {
+        // 显示控件库
+        case 'single':
+            this.singleShow = true;
+            this.suiteShow = false;
+          break;
 
-      // 触发设备切换事件
-      this.$emit("deviceToggle", params);
-    },
-
-    // 设置使用那些设备
-    setDevice(params) {
-      if (Array.isArray(params)) {
-        if (params.length > 1) {
-          // 临时对象，用于修改设备列表顺序
-          let tempObject = {};
-
-          // 选择设备
-          for (let index = 0; index < params.length; index++) {
-            if (this.deviceList[params[index]]) {
-              // 将设备属性的第一个元素设置默认设备
-              if (index === 0) {
-                this.activerDevice = this.deviceList[params[index]].type;
-                tempObject[this.activerDevice] = this.deviceList[params[index]];
-              }
-
-              // 显示指定的设备
-              this.deviceList[params[index]].status = true;
-            }
-          }
-
-          // 修改设备列表顺序，将传进来的设备数据第一个设为默认并提前到第一
-          this.deviceList = Object.assign({}, tempObject, this.deviceList);
-
-          // 不显示设备选项
-        } else {
-          for (const key in this.deviceList) {
-            if (this.deviceList.hasOwnProperty(key)) {
-              this.deviceList[key].status = false;
-            }
-          }
-        }
+        // 显示套件库
+        case 'suite':
+            this.singleShow = false;
+            this.suiteShow = true;
+          break;
       }
     },
 
@@ -200,20 +169,6 @@ export default {
     clearEvent: function() {
       // 自定义事件：清空构建器数据事件
       this.$emit("clear");
-    }
-  },
-
-  // 生命周期钩子：组件安装完毕
-  mounted: function() {
-    // 设置默认设备
-    this.setDevice(this.device);
-  },
-
-  // 监测数据变化
-  watch: {
-    // 实时更新设备数据
-    device: function(newVal, oldVal) {
-      this.setDevice(newVal);
     }
   }
 };

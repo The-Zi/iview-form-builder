@@ -56,7 +56,7 @@
       <Col class="iview-form-builder-row" span="24">
         <!-- 表单渲染 -->
         <Row class="form-grid-wrap">
-          <Form ref="thisForm" :model="formModel" :rules="ruleValidate">
+          <Form ref="thisForm" :model="formModel" :rules="ruleValidate" label-position="top" inline>
             <!-- 表单行 -->
             <Col class="form-grid-row" v-for="(row, rowIndex) in formData" :key="rowIndex" span="24">
               <!-- 表单列 -->

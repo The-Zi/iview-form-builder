@@ -15,21 +15,13 @@ const config = {
     // 模式
     mode: {
         builder: 'builder',
-        builderMobile: 'builder-mobile',
+        builderMobile: 'builderMobile',
         render: 'render',
+        renderDetailed: 'renderDetailed',
         detailed: 'detailed'
     },
     // 表单元素
     formElement: {
-        budget: {
-            title: '预算',
-            type: 'budget',
-            icon: {
-                name: '',
-                size: '',
-                color: ''
-            }
-        },
         inputText: {
             title: '文本输入框',
             type: 'inputText',
@@ -132,6 +124,18 @@ const config = {
         detailed: {
             title: '明细',
             type: 'detailed',
+            icon: {
+                name: '',
+                size: '',
+                color: ''
+            }
+        }
+    },
+    // 表单套件
+    formElementGroups: {
+        budget: {
+            title: '预算',
+            type: 'budget',
             icon: {
                 name: '',
                 size: '',

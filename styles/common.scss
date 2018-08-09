@@ -11,9 +11,27 @@
 
 
 // =============== 通用样式 ===============
-// .iview-form-builder-bg {
-//   background-image: url("");
-// }
+// 背景手机图片定位
+.iview-form-builder-bg {
+  position: absolute;
+  top: 0%;
+  left: 50%;
+  margin-left: -$mobileBgW/2;
+  width: $mobileBgW;
+  height: $mobileBgH;
+}
+
+// 表单构建器移动端栅格系统外包围
+.iview-form-builder-grid-mobile {
+  width: $mobileBuilderZoonW;
+  margin: 107px 0 0 26px;
+  border: 1px solid #ccc;
+
+  position: absolute;
+  top: 0%;
+  left: 50%;
+  margin-left: -$mobileBgW/2+26;
+}
 
 // 表单行
 .iview-form-builder-row {

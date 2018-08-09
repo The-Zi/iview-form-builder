@@ -9,17 +9,16 @@
 <template>
 <!-- 渲染表单组件 -->
 <div>
-    <div v-for="(modules, mIndex) in col" :key="'form-modules-' + mIndex">
+    <div v-for="(modules, mIndex) in nowCol" :key="'form-modules-' + mIndex">
         <!-- 设置组件的验证规则 -->
         {{ requireSetEvent(modules) }}
 
         <!-- 表单组件: 预算 -->
-        <FormItem class="iview-form-builder-modules-wrap" v-if="modules.type === module.budget.type
+        <FormItem class="iview-form-builder-modules-wrap" v-if="modules.type === moduleGroups.budget.type
         || modules.type === '预算'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 删除 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="删除" type="android-close"
                 @click.native="delElementEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -38,8 +37,7 @@
         || modules.type === '文本输入框'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -61,8 +59,7 @@
         || modules.type === '数字输入框'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -87,8 +84,7 @@
         <FormItem class="iview-form-builder-modules-wrap" v-if="modules.type === module.count.type"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -126,8 +122,7 @@
         <FormItem class="iview-form-builder-modules-wrap" v-if="modules.type === module.money.type"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -163,8 +158,7 @@
         || modules.type === '单选'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -188,8 +182,7 @@
         || modules.type === '多选'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -213,8 +206,7 @@
         || modules.type === '下拉选择'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -239,8 +231,7 @@
         || modules.type === '多行文本'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -262,8 +253,7 @@
         || modules.type === '说明文本'"
         :required="modules.require" :label="modules.label">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -284,8 +274,7 @@
         || modules.type === '时间日期'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -311,8 +300,7 @@
         || modules.type === '时间日期范围'"
         :required="modules.require" :label="modules.label" :prop="modules.name">
             <!-- 操作组件 -->
-            <div class="form-modules-action" v-if="modeType === modeOption.builder ||
-            modeType === modeOption.detailed">
+            <div class="form-modules-action" v-if="nowMode !== modeOption.renderDetailed">
                 <!-- 设置 -->
                 <Icon class="action" size="16" color="#a7a7a7" title="设置"
                 @click.native="settingEvent({rowIndex: modulesData.rowIndex, colIndex: modulesData.colIndex,
@@ -359,7 +347,8 @@ export default {
       // 组件模式选项
       modeOption: config.mode,
       // 表单组件配置
-      module: config.formElement
+      module: config.formElement,
+      moduleGroups: config.formElementGroups
     };
   },
 
@@ -382,11 +371,11 @@ export default {
   // 计算属性
   computed: {
     // 表单列
-    col: function() {
+    nowCol: function() {
       return this.modulesData.col;
     },
     // 表单列
-    modeType: function() {
+    nowMode: function() {
       return this.mode;
     },
     // 表单组件所在表单行的下标

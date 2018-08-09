@@ -9,23 +9,27 @@
   <Row>
     <Col span="24">
       <!-- 构建表单 -->
-      <builder v-if="nowMode === config.mode.builder || nowMode === config.mode.builderMobile" ref="builder"
-      :mode="mode" :baseData="nowBaseData" @saveEvent="sendFormBuilderData">
+      <builder v-if="nowMode === config.mode.builder" ref="builder" :mode="nowMode" :device="nowDevice"
+      :renderData="nowRenderData" :beforDeleteModule="nowBeforDeleteModule" @saveEvent="sendFormBuilderData">
       </builder>
 
       <!-- 渲染表单 -->
-      <render v-if="nowMode === config.mode.render" ref="render" :baseData="nowBaseData"
-      :renderData="nowRenderData" @submitEvent="sendFormBuilderData"></render>
+      <render v-if="nowMode === config.mode.render" ref="render" :renderData="nowRenderData"
+      @submitEvent="sendFormBuilderData"></render>
 
       <!-- 阅览表单 -->
-      <reading v-if="nowMode === config.mode.reading" :baseData="nowBaseData" :renderData="nowRenderData"
-      :keyValue="nowKeyValue"></reading>
+      <reading v-if="nowMode === config.mode.reading" :renderData="nowRenderData" :keyValue="nowKeyValue">
+      </reading>
     </Col>
   </Row>
 </template>
 
+
 <style lang="scss" scoped>
+// // =============== 导入样式文件 ===============
+// @import "./styles/common";
 </style>
+
 
 <script>
 // =============== 导入模块 ===============
@@ -55,12 +59,16 @@ export default {
     mode: {
       default: ""
     },
+    // 显示设备
+    device: {
+      default: ""
+    },
     // 表单类型
     baseData: {
       default: function() {
         return {
           number: "自动获取",
-          formTypeName: "",
+          formName: "",
           formType: ""
         };
       }
@@ -72,22 +80,32 @@ export default {
     // 表单键值对
     keyValue: {
       default: Object
+    },
+    // 在删除组件之前执行该函数
+    beforDeleteModule: {
+      default: Function
     }
   },
 
   // 计算属性
   computed: {
     nowMode: function() {
-      return this.mode;
+      return this.mode
+    },
+    nowDevice: function() {
+      return this.device
     },
     nowBaseData: function() {
-      return this.baseData;
+      return this.baseData
     },
     nowRenderData: function() {
-      return this.renderData;
+      return this.renderData
     },
     nowKeyValue: function() {
-      return this.keyValue;
+      return this.keyValue
+    },
+    nowBeforDeleteModule: function () {
+      return this.beforDeleteModule
     }
   },
 
@@ -109,6 +127,18 @@ export default {
 
   // 方法
   methods: {
+    // 保存：返回表单构建数据
+    getRenderData() {
+      return this.$refs.builder.save();
+    },
+
+    // 重置：清空表单构建数据
+    resetRenderData() {
+      this.$refs.builder.clearEvent();
+    },
+
+    // =======================
+
     // 构建模式：清空表单构建器数据
     clearFormBuilderData() {
       if (this.mode === config.mode.builder) {
