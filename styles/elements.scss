@@ -32,3 +32,9 @@
         }
     }
 }
+
+// 貌似iview对嵌套在.ivu-form-item内的.ivu-form-item的底部外边距设为0
+// 为了让必填提示信息不被遮挡，将底部外边距设为24px，与默认的大小一致；
+.ivu-form-item .ivu-form-item {
+    margin-bottom: 24px;
+}

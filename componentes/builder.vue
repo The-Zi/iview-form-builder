@@ -16,7 +16,8 @@
     <!-- 表单区域 -->
     <!-- <Col span="8"> -->
       <!-- <Row> -->
-        <Col :span="nowDevice === config.devices.mobile? 8:24" :offset="nowDevice === config.devices.mobile? 2: 0">
+        <Col :span="nowDevice === config.devices.mobile? 18:24">
+        <!-- <Col :span="nowDevice === config.devices.mobile? 8:24" :offset="nowDevice === config.devices.mobile? 2: 0"> -->
           <!-- 移动设备背景图 -->
           <img v-if="nowDevice === config.devices.mobile" class="iview-form-builder-bg"
           src="../images/Mobile_iphone.png">
@@ -74,9 +75,7 @@ export default {
       default: Array
     },
     // 在删除组件前执行的函数
-    beforDeleteModule: {
-      default: Function
-    }
+    beforDeleteModule: ""
   },
 
   // 计算属性

@@ -2,75 +2,22 @@
  * @Author: chenzicong
  * @Date: 2018-04-03 16:49:34
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-07-18 16:41:23
+ * @Last Modified time: 2018-08-27 11:39:04
  */
 
 
 <template>
     <Row>
-      <!-- 表单基础信息 -->
-      <Col class="iview-form-builder-row" span="24" v-if="nowMode !== modeOption.detailed">
-        <Row>
-          <!-- 表单类型编号 -->
-          <Col class="form-number-wrap" span="24">
-            <p>单号:&nbsp;&nbsp;<span class="form-number">{{formBase.applyNo}}</span></p>
-          </Col>
-
-          <!-- 表单名称 -->
-          <Col class="form-type-wrap" span="24">
-            <h1>{{formBase.applyCategoryName}}</h1>
-          </Col>
-
-          <Form ref="baseDataForm" :model="formBase" :rules="baseDataRule" label-position="top" inline>
-          <!-- 标题 -->
-          <Col class="form-title-wrap" span="24">
-            <FormItem label="标题：" prop="title">
-              <Input v-model="formBase.title" placeholder="必填，请对本次申请进行说明" @keyup.native="clearSpace">
-              </Input>
-            </FormItem>
-          </Col>
-
-          <!-- 紧急程度 -->
-          <Col class="form-status-wrap" span="24">
-            <FormItem label="紧急程度：" prop="emergencyDegree" required>
-              <RadioGroup v-model="formBase.emergencyDegree" @on-change="setEmergencyDegree">
-                <Radio :label="0">一般</Radio>
-                <Radio :label="1">紧急</Radio>
-              </RadioGroup>
-            </FormItem>
-          </Col>
-          </Form>
-        </Row>
-      </Col>
-
-      <!-- 表单申请信息 -->
-      <Col class="iview-form-builder-row" span="24" v-if="pattern === 'user' &&
-      nowMode !== modeOption.detailed" >
-        <Row>
-          <Col class="iview-form-builder-col" span="24">
-            <p>申请人：{{formBase.username}}</p>
-          </Col>
-
-          <Col class="iview-form-builder-col" span="24">
-            <p>申请部门：{{formBase.depName}}</p>
-          </Col>
-
-          <Col class="iview-form-builder-col" span="24">
-            <p>申请日期：{{formBase.createTime}}</p>
-          </Col>
-        </Row>
-      </Col>
-
       <!-- 表单构造区域 -->
       <Col class="iview-form-builder-row" span="24">
         <!-- 表单渲染 -->
         <Row class="form-grid-wrap">
-          <Form ref="thisForm" :model="formModel" :rules="ruleValidate">
+          <Form ref="thisForm" :model="formModel" :rules="ruleValidate" label-position="top">
             <!-- 表单行 -->
             <Col class="form-grid-row" v-for="(row, rowIndex) in formData" :key="rowIndex" span="24">
               <!-- 表单组件-明细模式下删除一组明细 -->
               <Icon class="form-grid-row-del" type="close" v-if="nowMode === modeOption.detailed && rowIndex > 0"
-              @click.native="minusDetailModuels(row, rowIndex)"></Icon>
+              @click.native="minusDetailModules(row, rowIndex)"></Icon>
 
               <!-- 表单列 -->
               <Row class="form-grid-col-wrap">
@@ -78,6 +25,7 @@
                 :span="col.offset?setColSize(rowIndex) + (setColSize(rowIndex)) : setColSize(rowIndex)"
                 :key="colIndex">
                   <div class="form-grid-render-zoon">
+
                     <!-- =============== 表单组件渲染 =============== -->
                     <formElements
                     :mode="modeOption.renderDetailed"
@@ -86,7 +34,7 @@
                     @moneyFormat="moneyFormat"
                     @count="performCount"
                     @syncEvent="formDataSync"
-                    @findRequire="setRequired"
+                    @findRequire="setRequiredRules"
                     @findCountFormula="saveCountFormula"
                     @findCalculator="saveCalculator">
                     </formElements>
@@ -98,32 +46,35 @@
                         v-if="modules.type === module.detailed.type"
                         :required="modules.require"
                         :label="modules.label">
+                          <!-- :modulesData="modules.value.modulesData" -->
+                          <!-- :modulesData="handleDetailModulesData(modules)" -->
 
                           <!-- 递归渲染明细组件 -->
                           <iview-form-builder-render
                           :ref="modules.id"
-                          :mode="module.detailed.type"
-                          :renderData="handleDetailData(modules)"
+                          :mode="modeOption.detailed"
                           :calculator="calculatorList"
                           :countFormula="countFormulaList"
+                          :renderData="handleDetailRenderData(modules)"
                           @moneyFormat="moneyFormat"
                           @count="performCount"
+                          @deleteDetailModules="performCount"
                           @syncEvent="formDataSync"
-                          @findRequire="setRequired"
+                          @findRequire="setRequiredRules"
                           @findCountFormula="saveCountFormula"
                           @findCalculator="saveCalculator">
                           </iview-form-builder-render>
 
                           <!-- 增减明细 -->
                           <div class="form-modules-detailed-action">
-                            <Button type="primary" icon="plus" long @click.native="plusDetailModuels(modules)">
+                            <Button type="primary" icon="plus" long @click.native="plusDetailModules(modules)">
                               {{modules.actionPlus}}
                             </Button>
                               <!-- <ButtonGroup>
-                                  <Button type="ghost" icon="minus" @click.native="minusDetailModuels(modules)">
+                                  <Button type="ghost" icon="minus" @click.native="minusDetailModules(modules)">
                                     {{modules.actionMinus}}
                                   </Button>
-                                  <Button type="ghost" icon="plus" @click.native="plusDetailModuels(modules)">
+                                  <Button type="ghost" icon="plus" @click.native="plusDetailModules(modules)">
                                     {{modules.actionPlus}}
                                   </Button>
                               </ButtonGroup> -->
@@ -139,7 +90,6 @@
           </Form>
         </Row>
       </Col>
-
     </Row>
 </template>
 
@@ -176,84 +126,22 @@ export default {
       default: config.mode.render
     },
 
-    // 基础数据：表单类型、标题、紧急程度、用户名、用户所属部分、填表日期
-    baseData: {
-      default: () => {
-        return {
-          // 表单号
-          applyNo: "",
-          //表单种类id
-          type: "",
-          // 表单名称
-          applyCategoryName: "",
-          // 标题
-          title: "",
-          // 紧急状态
-          emergencyDegree: 0,
-          // 用户名
-          username: "",
-          // 部门名
-          depName: "",
-          // 提交时间
-          createTime: "",
-          //表单数据
-          jsonContent: [],
-          //上传文件列表
-          commFileResourceList: [],
-          //表单id
-          formbuilderId: ""
-        };
-      }
-    },
-
     // 渲染用数据
     renderData: {
       default: Array
     },
 
     // 表单键值
-    keyValue: {
-      default: Object
-    },
-
-    // 表单渲染模式
-    pattern: {
-      default: "user"
-    },
-
-    // 计算对象
-    calculator: {
-      default: Object
-    },
-
-    // 计算公式
-    countFormula: {
-      default: Object
+    modulesData: {
+      default: Array
     }
   },
 
   // 计算属性
   computed: {
+    // 当前模式
     nowMode: function() {
       return this.mode;
-    },
-    // 可计算对象列表
-    calculatorList: {
-      get: function() {
-        return this.calculator;
-      },
-      set: function(newValue) {
-        this.calculator = Object.assign({}, this.calculator, newValue);
-      }
-    },
-    // 计算公式组件列表
-    countFormulaList: {
-      get: function() {
-        return this.countFormula;
-      },
-      set: function(newValue) {
-        this.countFormula = Object.assign({}, this.countFormula, newValue);
-      }
     }
   },
 
@@ -266,35 +154,23 @@ export default {
       module: config.formElement,
       // 表单基础数据
       formBase: {},
-      // 基础数据验证规则
-      baseDataRule: {
-        title: [{ required: true, message: "必填，不能为空", trigger: "blur" }],
-        emergencyDegree: [
-          { type: "number", required: true, message: "必填", trigger: "blur" }
-        ]
-      },
-      // 表单键值对
-      formKeyValue: {},
+      formModuleData: [],
       // 表单渲染数据
-      formData: [],
+      formData: [[[]]],
       // 临时表单数据,用于表单验证
       formModel: {},
       // 表单验证配置
       ruleValidate: {},
       // 金额最大值
       moneyMax: 999999999999999.9999,
-      // 表单组件数量计数器
-      modulesLength: {},
-      // 表单组件数量唯一下标计数器
-      modulesIndex: {},
       // 表单组件-明细，表单数据
       detailedRenderData: {},
-      // // 可计算对象列表
-      // calculatorList: {},
-      // // 计算公式组件列表
-      // countFormulaList: {},
-      // 保存来自明细组件内的计算公式
-      detailedCalculatorList: {}
+      // 可计算对象列表
+      calculatorList: {},
+      // 计算公式组件列表
+      countFormulaList: {},
+      // 处理完成可执行计算的计算公式
+      handleCountFormula: {}
     };
   },
 
@@ -329,6 +205,32 @@ export default {
         }
       }
       return result;
+    },
+
+    // 有效数组检查
+    trueArrCheck: function(params) {
+      // 判断是否有效的数组值
+      if (Array.isArray(params)) {
+        // 有效值的数量
+        let trueVal = 0;
+
+        // 判断数组内元素是否全部是有效值
+        for (let index = 0; index < params.length; index++) {
+          if (params[index]) {
+            trueVal += 1;
+          }
+        }
+
+        // 只有在全部元素都有效的情况下，才判为有效值
+        if (trueVal === params.length) {
+          return params
+        // 无效值，设为空数组，触发表单验证规则
+        } else {
+          return [];
+        }
+      } else {
+        return params;
+      }
     },
 
     // 清除空格
@@ -382,7 +284,7 @@ export default {
     },
 
     // 表单数据同步
-    formDataSync() {
+    formDataSync(action="") {
       // 当前渲染的表单数据，包括结构和值
       let formData = this.formData;
 
@@ -397,26 +299,53 @@ export default {
             let target = formData[index1][index2][index3];
             let value = target.value;
 
-            // 验证必填项用数据
-            this.formModel[target.name] = value;
+            this.formModel[target.name] = this.trueArrCheck(value);
+            // // 判断是否有效的数组值
+            // if (Array.isArray(value)) {
+            //   // 有效值的数量
+            //   let trueVal = 0;
+
+            //   // 判断数组内元素是否全部是有效值
+            //   for (let index = 0; index < value.length; index++) {
+            //     if (value[index]) {
+            //       trueVal += 1;
+            //     }
+            //   }
+
+            //   // 只有在全部元素都有效的情况下，才判为有效值
+            //   if (trueVal === value.length) {
+            //     this.formModel[target.name] = value
+
+            //   // 无效值，设为空数组，触发表单验证规则
+            //   } else {
+            //     this.formModel[target.name] = [];
+            //   }
+            // } else {
+            //   this.formModel[target.name] = value
+            // }
             // 对时间日期范围组件的空值做处理，以实现必填项判断为未填
-            if (
-              Array.isArray(value) &&
-              value.length === 2 &&
-              value[0] === "" &&
-              value[1] === ""
-            ) {
-              this.formModel[target.name] = "";
-            }
+            // if (
+            //   Array.isArray(value) &&
+            //   value.length === 2 &&
+            //   value[0] === "" &&
+            //   value[1] === ""
+            // ) {
+            //   this.formModel[target.name] = "";
+            // }
           }
         }
       }
+
+      // 传递组件数据
+      this.$emit("on-change", this.getModulesData(), action);
     },
 
-    // 取出表单的键值对
-    getKeyValue(params = "") {
+    // 取出表单组件的数据
+    getModulesData(params = "") {
       // 必填项状态
       let status = true;
+      // 表单组件数据
+      let modulesData = [];
 
       // 遍历表单结构，把所有表单元素的 key 和 value 取出来
       for (let index1 = 0; index1 < this.formData.length; index1++) {
@@ -427,36 +356,63 @@ export default {
             index3++
           ) {
             let targetModule = this.formData[index1][index2][index3];
-            let moduleType = targetModule.type;
-            let moduleValue = targetModule.value;
+            let moduleId = targetModule.id;
+            let moduleLabel = targetModule.label;
             let moduleName = targetModule.name;
+            let moduleValue = targetModule.value;
+            let moduleRequire = targetModule.require;
+            let moduleType = targetModule.type;
 
             // 将时间日期组件的value转成时间戳
             if (
-              moduleType === "时间日期" ||
-              moduleType === "时间日期范围" ||
               moduleType === this.module.dateTime.type ||
               moduleType === this.module.dateTimeRange.type
             ) {
               // 时间日期范围
               if (Array.isArray(moduleValue)) {
-                this.formKeyValue[moduleName] = [];
+                let temp = {
+                  id: moduleId,
+                  type: moduleType,
+                  label: moduleLabel,
+                  name: moduleName,
+                  value: [],
+                  format: targetModule.format,
+                  require: moduleRequire
+                };
+
                 for (let index = 0; index < moduleValue.length; index++) {
                   if (moduleValue[index] instanceof Date) {
-                    this.formKeyValue[moduleName][index] = moduleValue[
-                      index
-                    ].getTime();
+                    temp.value[index] = moduleValue[index].getTime();
                   } else {
-                    this.formKeyValue[moduleName][index] = "";
+                    temp.value[index] = "";
                   }
                 }
+
+                // 添加结果
+                modulesData.push(temp);
 
                 // 时间日期
               } else {
                 if (moduleValue instanceof Date) {
-                  this.formKeyValue[moduleName] = moduleValue.getTime();
+                  modulesData.push({
+                    id: moduleId,
+                    type: moduleType,
+                    label: moduleLabel,
+                    name: moduleName,
+                    value: moduleValue.getTime(),
+                    format: targetModule.format,
+                    require: moduleRequire
+                  });
                 } else {
-                  this.formKeyValue[moduleName] = "";
+                  modulesData.push({
+                    id: moduleId,
+                    type: moduleType,
+                    label: moduleLabel,
+                    name: moduleName,
+                    value: "",
+                    format: targetModule.format,
+                    require: moduleRequire
+                  });
                 }
               }
 
@@ -467,16 +423,33 @@ export default {
                 // 如果必填项都填写了，就将该明细组件对应的表单域的值设为
                 // 改明细组件的表单结构和键值对
                 if (result) {
-                  this.formKeyValue[moduleName] = {
-                    // renderData: this.detailedRenderData[targetModule.id],
-                    // keyValue: this.$refs[targetModule.id][0].getKeyValue().result
-                    renderData: JSON.stringify(
-                      this.detailedRenderData[targetModule.id]
-                    ),
-                    keyValue: JSON.stringify(
-                      this.$refs[targetModule.id][0].getKeyValue().result
-                    )
-                  };
+                  modulesData.push({
+                    id: moduleId,
+                    type: moduleType,
+                    label: moduleLabel,
+                    name: moduleName,
+                    // 设置表单明细组件的值
+                    value: JSON.stringify({
+                      // 明细组件的表单渲染数据
+                      renderData: JSON.stringify(
+                        this.detailedRenderData[targetModule.id]
+                      ),
+                      // 明细组件的表单组件数据
+                      modulesData: JSON.stringify(
+                        this.$refs[targetModule.id][0].getModulesData().result
+                      )
+                    }),
+                    require: moduleRequire
+                  });
+
+                  // modulesData[moduleName] = {
+                  //   renderData: JSON.stringify(
+                  //     this.detailedRenderData[targetModule.id]
+                  //   ),
+                  //   modulesData: JSON.stringify(
+                  //     this.$refs[targetModule.id][0].getModulesData().result
+                  //   )
+                  // };
                 } else {
                   status = result;
                 }
@@ -484,7 +457,14 @@ export default {
 
               // 其它组件的值都直接保存
             } else {
-              this.formKeyValue[moduleName] = moduleValue;
+              modulesData.push({
+                id: moduleId,
+                type: moduleType,
+                label: moduleLabel,
+                name: moduleName,
+                value: moduleValue,
+                require: moduleRequire
+              });
             }
           }
         }
@@ -492,28 +472,31 @@ export default {
 
       // 是否过滤表单值
       if (params === "all") {
-        return { status: status, result: this.formKeyValue };
+        return { status: status, result: modulesData };
       } else {
         // 过滤结果
-        let result = {};
-        // 过滤表单值
-        for (const key in this.formKeyValue) {
-          if (this.formKeyValue.hasOwnProperty(key)) {
+        let result = [];
+
+        // 过滤空值
+        for (let index = 0; index < modulesData.length; index++) {
+          const element = modulesData[index];
+
+          // 保存必填项
+          if (element.require) {
+            result.push(element);
             // 过滤空字符串和空对象
-            if (
-              this.formKeyValue[key] !== "" &&
-              this.formKeyValue[key] !== null
-            ) {
-              result[key] = this.formKeyValue[key];
-              // 过滤空数组
-            } else if (
-              Array.isArray(this.formKeyValue[key]) &&
-              this.formKeyValue[key].length > 0
-            ) {
-              result[key] = this.formKeyValue[key];
-            }
+          } else if (
+            element.value &&
+            element.value !== "" &&
+            element.value !== null
+          ) {
+            result.push(element);
+            // 过滤空数组
+          } else if (Array.isArray(element.value) && element.value.length > 0) {
+            result.push(element);
           }
         }
+
         // 返回过滤结果
         return { status: status, result: result };
       }
@@ -526,6 +509,9 @@ export default {
       // 表单数量
       let formNum = 0;
 
+      // 检查必填项前，对表单数据进行同步，将表单组件的值同步到用于验证必填项的表单组件对应的变量
+      this.formDataSync("submit");
+
       // 计算iview表单的数量
       // 表单组件: 明细
       for (const key in this.detailedRenderData) {
@@ -534,26 +520,9 @@ export default {
         }
       }
 
-      // 发现基础数据表单
-      if (this.$refs.baseDataForm) {
-        formNum += 1;
-      }
-
       // 发现渲染表单
       if (this.$refs.thisForm) {
         formNum += 1;
-      }
-
-      // 检查必填项前，对表单数据进行同步，将表单组件的值同步到用于验证必填项的表单组件对应的变量
-      this.formDataSync();
-
-      // 基础数据表单必填项检查
-      if (this.nowMode === this.modeOption.render || this.$refs.baseDataForm) {
-        this.$refs.baseDataForm.validate(result => {
-          if (result) {
-            checkResult += 1;
-          }
-        });
       }
 
       // 渲染表单必填项检查
@@ -573,24 +542,30 @@ export default {
           });
         }
       }
+      // 发现基础数据表单
+      // if (this.$refs.baseDataForm) {
+      //   formNum += 1;
+      // }
+
+      // 基础数据表单必填项检查
+      // if (this.nowMode === this.modeOption.render || this.$refs.baseDataForm) {
+      //   this.$refs.baseDataForm.validate(result => {
+      //     if (result) {
+      //       checkResult += 1;
+      //     }
+      //   });
+      // }
 
       // 检查所有表单的必填项是否都已填写
       if (checkResult === formNum) {
         // 获取表单键值对
-        let keyValue = this.getKeyValue();
+        let modulesData = this.getModulesData();
 
         // 表单组件：明细 内的表单结构数据和键值对获取结果状态
-        if (keyValue.status === true) {
-          // 结果数据
-          let result = {
-            baseData: this.baseData,
-            formData: this.formData,
-            keyValue: keyValue.result
-          };
-
-          // 传递表单基础数据、表单结构数据、表单键值对
-          this.$emit("submitEvent", result);
-          return result;
+        if (modulesData.status === true) {
+          // 传递表单组件数据
+          this.$emit("submitEvent", modulesData.result);
+          return modulesData.result;
         }
       } else {
         this.$Modal.error({
@@ -598,200 +573,87 @@ export default {
           content: "请检查必填项"
         });
       }
-
-      // 必填项检查和传递数据
-      // if (this.nowMode === this.modeOption.render) {
-      //   // 基础数据表单必填项检查
-      //   this.$refs.baseDataForm.validate((result) => {
-      //     if (result) {
-      //       checkResult += 1;
-      //     }
-      //   });
-
-      //   // 渲染表单必填项检查
-      //   this.$refs.thisForm.validate((result) => {
-      //     if (result) {
-      //       checkResult += 1;
-      //     }
-      //   });
-
-      //   // 表单组件: 明细，表单必填项检查
-      //   for (const key in this.detailedRenderData) {
-      //     if (this.detailedRenderData.hasOwnProperty(key)) {
-      //       this.$refs[key][0].checkRequired((result)=>{
-      //         if (result) {
-      //           checkResult += 1;
-      //         }
-      //       });
-      //     }
-      //   }
-
-      //   // 检查所有表单的必填项是否都已填写
-      //   if (checkResult === formNum) {
-      //     // 获取表单键值对
-      //     let keyValue = this.getKeyValue();
-
-      //     if (keyValue.status === true) {
-      //       // 结果数据
-      //       let result =  { baseData: this.baseData, formData: this.formData, keyValue: keyValue.result };
-
-      //       // 传递表单基础数据、表单结构数据、表单键值对
-      //       this.$emit("submitEvent", result);
-
-      //       return result
-      //     }
-      //   } else {
-      //     this.$Modal.error({
-      //       title: "错误",
-      //       content: "请检查必填项"
-      //     });
-      //   }
-      //   // this.$refs.baseDataForm.validate((result) => {
-      //   //   if (result) {
-      //   //     this.$refs.thisForm.validate((statis)=>{
-      //   //       if (statis) {
-      //   //         // 获取表单键值对
-      //   //         let keyValue = this.getKeyValue();
-      //   //         if (keyValue.status === true) {
-      //   //           // 结果数据
-      //   //           let result =  { baseData: this.baseData, formData: this.formData,
-      //   //           keyValue: keyValue.result };
-
-      //   //           // 传递表单基础数据、表单结构数据、表单键值对
-      //   //           this.$emit("submitEvent", result);
-
-      //   //           return result
-      //   //         }
-      //   //       } else {
-      //   //         this.$Modal.error({
-      //   //           title: "错误",
-      //   //           content: "请检查必填项"
-      //   //         });
-      //   //       }
-      //   //     });
-      //   //   } else {
-      //   //     this.$Modal.error({
-      //   //       title: "错误",
-      //   //       content: "请检查必填项"
-      //   //     });
-      //   //   }
-      //   // });
-      // } else if (this.nowMode === this.module.detailed.type) {
-      //   this.$refs.thisForm.validate((statis)=>{
-      //     if (statis) {
-      //       // 获取表单键值对
-      //       let keyValue = this.getKeyValue();
-      //       if (keyValue.status === true) {
-      //         // 结果数据
-      //         let result =  { formData: this.formData, keyValue: keyValue.result };
-
-      //         // 传递表单基础数据、表单结构数据、表单键值对
-      //         this.$emit("submitEvent", result);
-
-      //         return result
-      //       }
-      //     } else {
-      //       this.$Modal.error({
-      //         title: "错误",
-      //         content: "请检查必填项"
-      //       });
-      //     }
-      //   });
-      // }
     },
 
-    // 设置必填项
-    setRequired(params) {
-      // 默认为空，未填
-      this.formModel[params.name] = "";
-      // 验证规则：数据类型
-      let type = typeof params.value;
-      // 验证规则：验证触发时机
-      let trigger = "blur";
+    // 为表单必填项设置验证规则
+    setRequiredRules(params) {
+      if (params.require) {
+        // 默认为空，未填
+        this.formModel[params.name] = "";
+        // 验证规则：默认数据类型
+        let type = 'string';
+        // 验证规则：验证触发时机
+        let trigger = "blur";
+        // 子验证规则
+        let subRule = {max: params.max, min: params.min, message: '最大值：'+ params.max +'，最小值：'+
+            params.min, trigger: 'change'};
 
-      // // 对象类型数据的验证规则
-      // if (typeof params.value === "object") {
-      //   // 日期类型
-      //   if (params.value instanceof Date) {
-      //       console.log(params.type)
-      //       console.log(params.value)
-      //     type = "date";
-      //     trigger = "change";
-      //   }
+        // 数字类型必填项：数字输入框类、金额类、计算公式
+        if (params.type === this.module.inputNumber.type || params.type === this.module.money.type ||
+          params.type === this.module.count.type) {
+          type = "number";
+          trigger = "change";
 
-      //   // 数组类型
-      //   if (Array.isArray(params.value)) {
-      //     console.log(params.type)
-      //     console.log(params.value)
-
-      //     type = "array";
-      //     trigger = "change";
-      //   }
-      // }
-
-      // if (type === "number") {
-      //   trigger = "change";
-      // }
-
-      // this.ruleValidate[params.name] = [{required: params.require, message:"必填",
-      // type: type, trigger: trigger}];
-
-      // 数字类型必填项：数字输入框类、金额类
-      if (
-        params.type === "数字输入框" ||
-        params.type === this.module.inputNumber.type ||
-        params.type === this.module.money.type
-      ) {
-        type = "number";
-        trigger = "change";
-
-        // 日期类型必填项：时间日期
-      } else if (
-        params.type === "时间日期" ||
-        params.type === this.module.dateTime.type
-      ) {
-        type = "date";
-        trigger = "change";
-
-        // 数组类型必填项：时间日期范围、多选框
-      } else if (
-        params.type === "时间日期范围" ||
-        params.type === this.module.dateTimeRange.type ||
-        params.type === "多选" ||
-        params.type === this.module.checkbox.type
-      ) {
-        type = "array";
-        trigger = "change";
-      }
-      // else {
-      // this.ruleValidate[params.name] = [{required: params.require, message:"必填",
-      // type:"string",trigger: "blur"}];
-      // }
-
-      // 设置验证规则
-      this.ruleValidate[params.name] = [
-        {
-          required: params.require,
-          message: "必填",
-          type: type,
-          trigger: trigger
+          // 计算公式没有最大值最小值限制
+          // if (params.type !== this.module.count.type) {
+            // console.log(1111)
+            // subRule = {max: params.max, min: params.min, message: '最大值：'+ params.max +'，最小值：'+
+            // params.min, trigger: 'change'};
+          // }
         }
-      ];
+
+        // 时间日期
+        if (params.type === this.module.dateTime.type) {
+          type = "date";
+          trigger = "change";
+        }
+
+        // 时间日期范围
+        if (params.type === this.module.dateTimeRange.type) {
+          type = "array";
+          trigger = "change";
+        }
+
+        // 多选框
+        if (params.type === this.module.checkbox.type) {
+          type = "array";
+          trigger = "change";
+        }
+
+        // 单选框
+        if (params.type === this.module.radio.type) {
+          trigger = "change";
+        }
+
+        // 下拉框
+        if (params.type === this.module.select.type) {
+          trigger = "change";
+        }
+
+        // 设置验证规则
+        this.ruleValidate[params.name] = [
+          {
+            required: params.require,
+            message: "必填",
+            type: type,
+            trigger: trigger,
+            subRule
+          }
+        ];
+      }
     },
 
     // 检查必填项
     checkRequired(fn) {
       // 同步验证数据
-      this.formDataSync();
+      this.formDataSync("checkRequired");
       this.$refs.thisForm.validate(fn);
     },
 
     // 设置表单键值
     setFormKeyValue() {
-      if (
-        this.formData.length > 0 &&
-        Object.getOwnPropertyNames(this.formKeyValue).length > 0
-      ) {
+      // 当表单结构数据和表单组件数据都存在的场合才会执行
+      if (this.formData.length > 0 && this.formModuleData.length > 0) {
         // 查找行
         for (let index1 = 0; index1 < this.formData.length; index1++) {
           // 查找列
@@ -806,46 +668,50 @@ export default {
               index3 < this.formData[index1][index2].length;
               index3++
             ) {
+              // 目标表单组件
+              let targetModule = this.formData[index1][index2][index3];
+
               // 设置键值
-              for (const key in this.formKeyValue) {
-                if (this.formKeyValue.hasOwnProperty(key)) {
-                  let target = this.formData[index1][index2][index3];
-                  // 找到和键值对匹配的表单元素
-                  if (target.name === key) {
-                    // 对时间日期组件value做转换处理
-                    if (
-                      target.type === "时间日期" ||
-                      target.type === "时间日期范围"
-                    ) {
-                      if (
-                        Array.isArray(this.formKeyValue[key]) &&
-                        this.formKeyValue[key].length > 0
-                      ) {
-                        this.formData[index1][index2][index3].value = [];
-                        for (
-                          let index = 0;
-                          index < this.formKeyValue[key].length;
-                          index++
-                        ) {
-                          if (this.formKeyValue[key][index]) {
-                            let date = new Date(this.formKeyValue[key][index]);
-                            this.formData[index1][index2][index3].value[
-                              index
-                            ] = date;
-                          }
-                        }
-                      } else {
-                        if (this.formKeyValue[key]) {
-                          let date = new Date(this.formKeyValue[key]);
-                          this.formData[index1][index2][index3].value = date;
-                        }
-                      }
-                      // 设置表单元素的值
-                    } else {
-                      this.formData[index1][index2][
-                        index3
-                      ].value = this.formKeyValue[key];
-                    }
+              for (let index = 0; index < this.formModuleData.length; index++) {
+                const element = this.formModuleData[index];
+                // 找到和键值对匹配的表单元素
+                if (element.id === targetModule.id) {
+                  // 处理不同表单组件的值
+                  switch (element.type) {
+                    // 金额组件
+                    case this.module.money.type:
+                      targetModule.value = element.value;
+                      targetModule.cnNum = this.moneyFormat(element);
+                      break;
+
+                    // 计算公式组件
+                    case this.module.count.type:
+                      targetModule.value = element.value;
+                      targetModule.cnNum = this.moneyFormat(element);
+                      break;
+
+                    // 时间日期组件
+                    case this.module.dateTime.type:
+                      targetModule.value = new Date(element.value);
+                      break;
+
+                    // 时间日期范围组件
+                    case this.module.dateTimeRange.type:
+                      targetModule.value = [];
+                      targetModule.value[0] = new Date(element.value[0]);
+                      targetModule.value[1] = new Date(element.value[1]);
+                      break;
+
+                    // 明细组件
+                    case this.module.detailed.type:
+                      targetModule.value = element.value;
+                      break;
+
+                      break;
+                    // 默认处理
+                    default:
+                      targetModule.value = element.value;
+                      break;
                   }
                 }
               }
@@ -855,18 +721,8 @@ export default {
       }
     },
 
-    // 设置表单紧急程度
-    setEmergencyDegree(val) {
-      this.formBase.emergencyDegree = Number(val);
-    },
-
     // 重置表单验证状态
     resetFields() {
-      // 以表单明细组件模式运行时，不执行对基础数据表单的重置
-      if (this.nowMode !== this.modeOption.detailed) {
-        this.$refs.baseDataForm.resetFields();
-      }
-
       this.$refs.thisForm.resetFields();
     },
 
@@ -893,17 +749,145 @@ export default {
       this.$emit("findCountFormula", this.countFormulaList[params.id]);
     },
 
-    // 执行计算
-    performCount: function(params = "", source = "", rowIndex = "") {
-      // 计算明细内的可计算对象
-      this.$emit("count", params = "", source);
+    // 处理计算公式
+    handleFormulas: function(params) {
+      if (Array.isArray(params) && params.length > 0) {
+        // 保存筛选出来的，计算公式中包含的，明细组件内计算对象id的位置
+        let formulaIndex = [];
+        // 筛选出来的，计算公式中包含的，明细组件内计算对象的值
+        let formulaValue = {};
 
-      // 计算公式处理
+        // 检查是否有效值
+        let checkValue = (params)=>{
+          if (params && Number(params) && !isNaN(params)) {
+            return params
+          } else {
+            return 0
+          }
+        };
+
+        // 包含明细组件内计算对象的计算公式处理结果集合
+        let formulasResultArr = [];
+
+        // 遍历计算公式
+        for (let index = 0; index < params.length; index++) {
+          const formulaElement = params[index];
+          // 过滤出计算公式中的计算对象Id
+          if (/[a-zA-Z]/g.test(formulaElement)) {
+            // 如果当前是在表单构建器的构建模式下，
+            // 并且根据计算公式中的计算对象id，没在计算对象列表中找到对应的计算对象时，直接退出，防止找不到对象报错
+            // 一般只有在表单构建器的构建模式下，编辑表单结构时才有可能出现
+            if (this.nowMode === this.modeOption.builder && !this.calculatorList[formulaElement]) {
+              return false
+            }
+
+            // 根据过滤出的计算对象id，筛选出计算对象列表中对应的计算对象的值
+            for (const key in this.calculatorList) {
+              if (this.calculatorList.hasOwnProperty(key)) {
+                // 筛选计算公式中，包含的明细组件内计算对象id
+                if (this.calculatorList[key].id.match(formulaElement + "-")) {
+                  // 保存筛选出来的， 计算公式中包含的，明细组件内计算对象id的位置
+                  formulaIndex.push(index);
+                  // 以位置下标为属性名，保存筛选出来的， 计算公式中包含的，明细组件内计算对象的值
+                  if (Array.isArray(formulaValue[index])) {
+                    formulaValue[index].push(checkValue(this.calculatorList[key].value));
+                  } else {
+                    formulaValue[index] = [];
+                    formulaValue[index].push(checkValue(this.calculatorList[key].value));
+                  }
+
+                // 将非明细组件内的计算对象的值替换进计算公式中
+                } else if(params[index] === this.calculatorList[key].id) {
+                  params[index] = checkValue(this.calculatorList[key].value);
+                }
+              }
+            }
+          }
+        }
+
+        // 如果查到的计算公式中，包含的明细组件内计算对象的数量大于0
+        // 则根据
+        if (formulaIndex.length > 0) {
+          // 复制当前已替换了非明细组件内计算对象id的计算公式数组
+          // 用于接下来的操作，避免影响到下一次操作
+          let formulasHandleResult = params.concat();
+          // 计算器，用于查找同一个位置，在本轮替换中需要替换进去的值
+          let counter = 0;
+          // 临时处理结果，用于将乘法和除法符号替换为计算机可识别的星号和斜杠
+          let tempHandleResult = "";
+
+          // 根据计算公式中任意一个，明细组件内相同计算对象值的数量，来判断需要生成的计算公式数量
+          // 因为值的数量就代表着，明细组件内有多少个相同的计算对象，而每一个相同的计算对象
+          // 都应该对应一个计算公式
+          for (let index = 0; index < formulaValue[formulaIndex[0]].length; index++) {
+            // 通过计算对象id在计算公式中的位置，确定需要插入值的位置
+            for (let index = 0; index < formulaIndex.length; index++) {
+              const element = formulaIndex[index];
+
+              // 根据计算器，确认需要插入的是第几个值
+              if (counter <= formulaValue[element].length - 1) {
+                formulasHandleResult[element] = formulaValue[element][counter];
+              }
+            }
+
+            // 替换乘法和除法符号
+            tempHandleResult = formulasHandleResult.join("").replace(/\×/g, "*");
+            tempHandleResult = tempHandleResult.replace(/\÷/g, "/");
+
+            // 保存本轮替换完成的计算公式
+            formulasResultArr.push(tempHandleResult);
+
+            // 计数器加1，修改一下轮需要替换进去的值
+            counter += 1;
+          }
+
+          // 返回处理完成的计算公式
+          return formulasResultArr
+
+        // 否则，只需直接返回被替换了，非明细组件内的计算对象的值，的计算公式
+        } else {
+          // 复制当前已替换了非明细组件内计算对象id的计算公式数组
+          // 用于接下来的操作，避免影响到下一次操作
+          let formulasHandleResult = params.concat();
+
+          // 替换乘法和除法符号
+          tempHandleResult = formulasHandleResult.join("").replace(/[×]/g, "*");
+          tempHandleResult = tempHandleResult.replace(/[÷]/g, "/");
+
+          // 保存本轮替换完成的计算公式
+          formulasResultArr.push(tempHandleResult);
+
+          // 返回处理完成的计算公式
+          return formulasResultArr
+        }
+      }
+    },
+
+    // 执行计算
+    performCount: function(params = {}) {
+
+      // 删除计算对象&计算公式对象
+      if (params.action === "del" && Array.isArray(params.modulesId) && params.modulesId.length > 0) {
+        for (let index = 0; index < params.modulesId.length; index++) {
+          const element = params.modulesId[index];
+          // 计算对象
+          if (this.calculatorList[element]) {
+            delete this.calculatorList[element];
+          }
+
+          // 计算公式
+          if (this.countFormulaList[element]) {
+            delete this.countFormulaList[element];
+          }
+        }
+      }
+
+      // 计算公式处理并计算
       for (const key1 in this.countFormulaList) {
         if (this.countFormulaList.hasOwnProperty(key1)) {
+
           // 拥有计算公式的情况下才执行计算操作
           if (this.countFormulaList[key1].countFormulas) {
-
             // 目标计算公式组件
             let targetFormula = this.countFormulaList[key1];
             // 修改后的计算公式结果
@@ -911,63 +895,9 @@ export default {
             // 计算公式的计算结果
             let countResult = 0;
 
-            // 处理计算公式
-            let handleFormulas = (params) => {
-              // 结果数组
-              let resultArr = [];
-              // 公式处理结果
-              let formulaResult = "";
-              // 暂存计算公式
-              let saveFormula = params.countFormulas;
-
-              // 将可计算对象的值，根据ID替换进计算公式
-              for (const key2 in params.calculatorList) {
-                if (params.calculatorList.hasOwnProperty(key2)) {
-                  // 对表单组件-明细中的计算对象的id进行处理
-                  let targetID = params.calculatorList[key2].id.split("-")[0] + "-" +
-                  params.calculatorList[key2].id.split("-")[1];
-                  // 正则对象
-                  let rules = new RegExp(targetID, "g");
-
-                  if (formulaResult === "") {
-                    // 第一次替换
-                    formulaResult = params.countFormulas.replace(rules, params.calculatorList[key2].value);
-                  } else {
-                    // 根据计算公式中是否还含有英文字母判断计算公式是否已经替换完毕
-                    let nowFormula = formulaResult.replace(/[×]/g, "*");
-                      nowFormula = nowFormula.replace(/[÷]/g, "/");
-                      nowFormula = nowFormula.replace(/null/g, "0");
-                      nowFormula = nowFormula.replace(/&nbsp;/g, "");
-
-                    // 尚未替换完毕
-                    if (/[a-zA-Z]/.test(nowFormula)) {
-                      formulaResult = formulaResult.replace(rules, params.calculatorList[key2].value);
-
-                      // 判断当前替换完后是否已经全部替换完成
-                      let nowFormula = formulaResult.replace(/[×]/g, "*");
-                      nowFormula = nowFormula.replace(/[÷]/g, "/");
-                      nowFormula = nowFormula.replace(/null/g, "0");
-                      nowFormula = nowFormula.replace(/&nbsp;/g, "");
-
-                      // 如果当前已替换完毕，则保存当前的计算公式
-                      if (!/[a-zA-Z]/.test(nowFormula)) {
-                        resultArr.push(nowFormula);
-                      }
-                    // 第一轮计算公式值替换处理完毕，开始第二轮替换
-                    } else {
-                      formulaResult = saveFormula.replace(rules, params.calculatorList[key2].value);
-                    }
-                  }
-                }
-              }
-
-              // 返回计算公式处理结果数组
-              return resultArr
-            };
-
             // 处理当前计算公式组件的计算公式
-            formulaResult = handleFormulas({calculatorList: this.calculatorList,
-            countFormulas: targetFormula.countFormulas});
+            formulaResult = this.handleFormulas(targetFormula.countFormulas.split("&nbsp;"));
+
             // 执行计算
             try {
               // 根据计算公式计算结果
@@ -975,78 +905,21 @@ export default {
                 let formula = formulaResult[index];
                 countResult = Number(countResult) + Number(eval(formula));
               }
-              targetFormula.value = Number(countResult.toFixed(targetFormula.rounding));
+              let rounding = targetFormula.rounding === 10? 0 : targetFormula.rounding;
+              targetFormula.value = Number(countResult.toFixed(rounding));
             } catch (error) {
+              console.log("计算公式出错：");
               console.log(error);
-              // countResult = false;
             }
 
-            // // 检查计算结果
-            // if (countResult) {
-            //   targetFormula.value = Number(countResult.toFixed(targetFormula.rounding);
-            // }
-              // 对来自于表单组件-明细，内部的计算事件的计算结果进行处理
-              // if (source === this.modeOption.detailed) {
-                // // 第一次执行计算
-                // if (!this.detailedCalculatorList[targetFormula.id]) {
-                //   // 计算结果赋值
-                //   targetFormula.value = Number(countResult);
-                //   // 保存本次计算中，触发计算事件的计算对象的id、所处行号和本次计算结果
-                //   this.detailedCalculatorList[targetFormula.id] = [
-                //     {
-                //       id: params.id,
-                //       row: rowIndex,
-                //       countResult: Number(countResult)
-                //     }
-                //   ];
-
-                // // 更新或叠加计算结果
-                // } else {
-                  // // 判断是叠加还是更新
-                  // // 如果触发当前计算事件的计算对象所处的行号等于，所属计算公式组件ID对应的，
-                  // // 明细组件计算对象列表中任意一个数组元素的行号
-                  // // 则表示其所属计算公式之前已经执行过一次计算
-                  // // 本次操作为：更新
-                  // if (rowIndex === this.detailedCalculatorList[targetFormula.id][0].row) {
-                  //   // 更新计算结果
-                  //   targetFormula.value = Number(countResult);
-                  // // 否则，叠加计算结果
-                  // } else {
-                  //     // 之前的计算结果
-                  //     let target = this.detailedCalculatorList[targetFormula.id];
-
-                  //     // 重置当前结果防止计算错误
-                  //     targetFormula.value = 0;
-
-                  //     // 将之前保存的计算结果相加
-                  //     for (let index = 0; index < target.length; index++) {
-                  //       targetFormula.value = Number(targetFormula.value) + Number(target[index].countResult);
-                  //     }
-
-                  //     // 最后加上本次计算的结果
-                  //     targetFormula.value = Number(targetFormula.value) + Number(countResult);
-                  // }
-
-                  // // 保存本次计算结果与计算对象信息
-                  // this.detailedCalculatorList[targetFormula.id].push({
-                  //   id: params.id,
-                  //   row: rowIndex,
-                  //   countResult: Number(countResult)
-                  // });
-                // }
-
-              // // 普通情况下的计算 与 来自于表单组件：明细，但之前执行的计算包括该计算对象
-              // } else {
-              //   targetFormula.value = Number(
-              //     countResult.toFixed(targetFormula.rounding)
-              //   );
-              // }
-
-              // 将计算结果转换成中文大写数字金额
-              this.moneyFormat(targetFormula);
+            // 将计算结果转换成中文大写数字金额
+            this.moneyFormat(targetFormula);
           }
         }
       }
+
+      // 计算明细内的可计算对象
+      this.$emit("count", params);
     },
 
     // 货币格式
@@ -1176,8 +1049,8 @@ export default {
       return chineseStr;
     },
 
-    // 增加表单组件-明细内元素
-    plusDetailModuels: function(params) {
+    // 表单组件-明细，自增明细内原始模板组件
+    plusDetailModules: function(params) {
       // 只有在表单构建器的渲染模式下，才能根据明细的原始模板数据自增表单组件
       if (this.nowMode === this.modeOption.render) {
         // 旧的渲染数据
@@ -1204,46 +1077,55 @@ export default {
       }
     },
 
-    // 减少表单组件-明细内元素
-    minusDetailModuels: function(row, rowIndex) {
+    // 表单组件-明细，自减明细内原始模板组件
+    minusDetailModules: function(row, rowIndex) {
       if (this.nowMode === this.modeOption.detailed) {
+        let modulesId = [];
         // 保留最后一组组件,作为原始数据,不完成删完
         if (this.formData.length > 1) {
-          this.formData.splice(rowIndex, 1);
-
+          // 删除可计算对象
           for (let index = 0; index < row[0].length; index++) {
             const module = row[0][index];
-            delete this.calculatorList[module.id]
+            if (this.calculatorList[module.id]) {
+              delete this.calculatorList[module.id];
+              modulesId.push(module.id);
+            }
           }
-        }
 
-        this.performCount();
+          // 删除一组表单组件
+          this.formData.splice(rowIndex, 1);
+
+          // 自定义事件：删除明细组件内组件
+          this.$emit("deleteDetailModules", {action: "del", modulesId: modulesId});
+        }
       }
-      // if (this.nowMode === this.modeOption.render) {
-      //   // // 已有或默认的渲染数据
-      //   // let target = this.detailedRenderData[params.id];
-      //   // // 保留最后一组组件,作为原始数据,不完成删完
-      //   // if (target.length > 1) {
-      //   //   target.splice(target.length - 1, 1);
-      //   // }
-      // }
     },
 
     // 表单组件-明细 渲染数据处理
-    handleDetailData: function(params) {
+    handleDetailRenderData: function(params) {
       // 与每个表单组件-明细相对应的渲染数据
-      // if (!this.detailedRenderData[params.id]) {
-      // this.detailedRenderData[params.id] = this.getFormDataTemplate();
-      // }
       this.detailedRenderData[params.id] = this.getFormDataTemplate();
 
-      // 根据原始模板数据设置渲染数据
+      // 将表单组件数据填入明细组件内的表单组件
       if (
+        params.value &&
+        typeof params.value === "string" &&
+        typeof JSON.parse(params.value) === "object"
+      ) {
+        // 与每个表单组件-明细相对应的渲染数据
+        return (this.detailedRenderData[params.id] = JSON.parse(
+          JSON.parse(params.value).renderData
+        ));
+
+      // 初次渲染表单，从表单明细组件的渲染模板（renderTemplate）属性中获取初始数据
+      } else if (
+        params.renderTemplate &&
         params.renderTemplate.length > 0 &&
         this.detailedRenderData[params.id][0][0].length === 0
       ) {
         for (let index = 0; index < params.renderTemplate.length; index++) {
-          let temp = Object.assign({}, params.renderTemplate[index]);
+          let temp = this.deepClone(params.renderTemplate[index]);
+          // let temp = Object.assign({}, params.renderTemplate[index]);
           // 在id和name属性后新增一个唯一的随机数，以防重复
           let random1 = Math.random();
           let random2 = Math.random();
@@ -1252,13 +1134,39 @@ export default {
           }
           temp.id = temp.id + "-" + random1.toString().split(".")[1];
           temp.name = temp.name + "-" + random2.toString().split(".")[1];
-
           this.detailedRenderData[params.id][0][0].push(temp);
         }
-      }
 
-      return this.detailedRenderData[params.id];
+        return this.detailedRenderData[params.id];
+      }
+    },
+
+    // 表单组件-明细 表单组件数据处理
+    handleDetailModulesData: function(params) {
+      // 将表单组件数据填入明细组件内的表单组件
+      if (
+        params.value &&
+        typeof params.value === "string" &&
+        typeof JSON.parse(params.value) === "object"
+      ) {
+        // 与每个表单组件-明细相对应的渲染数据
+        return (this.detailedRenderData[params.id] = JSON.parse(
+          JSON.parse(params.value).modulesData
+        ));
+      }
     }
+  },
+
+  // 生命周期钩子：实例化对象
+  created() {
+    // 如果当前是以表单组件-明细模式执行，
+    // 则将传入的renderData赋值给formData
+    // 因为以表单组件-明细模式执行时，传入的renderData不会发生变化，
+    // 因此无法触发watch中的赋值操作，所有要在这里手动赋值
+    // modulesData 同理
+    this.formData = this.renderData;
+    this.formModuleData = this.modulesData;
+    this.setFormKeyValue();
   },
 
   // 生命周期钩子：组件渲染完毕
@@ -1269,17 +1177,14 @@ export default {
 
   // 监测数据变化
   watch: {
-    // 设置基础数据
-    baseData: function(newVal, oldVal) {
-      this.formBase = newVal;
-    },
     // 设置渲染数据
     renderData: function(newVal, oldVal) {
       this.formData = newVal;
+      this.setFormKeyValue();
     },
     // 设置键值对
-    keyValue: function(newVal, oldVal) {
-      this.formKeyValue = newVal;
+    modulesData: function(newVal, oldVal) {
+      this.formModuleData = newVal;
       this.setFormKeyValue();
     }
   }

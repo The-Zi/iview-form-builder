@@ -10,15 +10,17 @@
     <Col span="24">
       <!-- 构建表单 -->
       <builder v-if="nowMode === config.mode.builder" ref="builder" :mode="nowMode" :device="nowDevice"
-      :renderData="nowRenderData" :beforDeleteModule="nowBeforDeleteModule" @saveEvent="sendFormBuilderData">
+      :renderData="nowRenderData" :beforDeleteModule="nowBeforDeleteModule">
+      <!-- :renderData="nowRenderData" :beforDeleteModule="nowBeforDeleteModule" @saveEvent="sendFormBuilderData"> -->
       </builder>
 
       <!-- 渲染表单 -->
-      <render v-if="nowMode === config.mode.render" ref="render" :renderData="nowRenderData"
-      @submitEvent="sendFormBuilderData"></render>
+      <render v-if="nowMode === config.mode.render" ref="render" :mode="nowMode" :device="nowDevice"
+      :renderData="nowRenderData" :modulesData="nowModulesData" @on-change="changeEvent"></render>
+      <!-- :renderData="nowRenderData" @on-change="changeEvent" @submitEvent="sendFormBuilderData"></render> -->
 
       <!-- 阅览表单 -->
-      <reading v-if="nowMode === config.mode.reading" :renderData="nowRenderData" :keyValue="nowKeyValue">
+      <reading v-if="nowMode === config.mode.reading" :renderData="nowRenderData" :keyValue="nowModulesData">
       </reading>
     </Col>
   </Row>
@@ -63,28 +65,16 @@ export default {
     device: {
       default: ""
     },
-    // 表单类型
-    baseData: {
-      default: function() {
-        return {
-          number: "自动获取",
-          formName: "",
-          formType: ""
-        };
-      }
-    },
     // 渲染数据
-    renderData: {
+    render: {
       default: Array
     },
     // 表单键值对
-    keyValue: {
-      default: Object
+    modules: {
+      default: Array
     },
     // 在删除组件之前执行该函数
-    beforDeleteModule: {
-      default: Function
-    }
+    beforDeleteModule: ""
   },
 
   // 计算属性
@@ -95,14 +85,11 @@ export default {
     nowDevice: function() {
       return this.device
     },
-    nowBaseData: function() {
-      return this.baseData
-    },
     nowRenderData: function() {
-      return this.renderData
+      return this.render
     },
-    nowKeyValue: function() {
-      return this.keyValue
+    nowModulesData: function() {
+      return this.modules
     },
     nowBeforDeleteModule: function () {
       return this.beforDeleteModule
@@ -127,36 +114,14 @@ export default {
 
   // 方法
   methods: {
-    // 保存：返回表单构建数据
-    getRenderData() {
+    // 获取表单渲染数据
+    getBuilderData() {
       return this.$refs.builder.save();
     },
 
-    // 重置：清空表单构建数据
-    resetRenderData() {
+    // 清空表单渲染数据
+    clearBuilderData() {
       this.$refs.builder.clearEvent();
-    },
-
-    // =======================
-
-    // 构建模式：清空表单构建器数据
-    clearFormBuilderData() {
-      if (this.mode === config.mode.builder) {
-        this.$refs.builder.clearEvent();
-      }
-    },
-
-    // 构建模式&渲染模式：发送表单构建器数据
-    sendFormBuilderData(params) {
-      // 自定义事件：表单构建器-构建模式，保存数据
-      if (this.mode === config.mode.builder) {
-        this.$emit("on-save", params);
-      }
-
-      // 自定义事件：表单构建器-渲染模式，发送当前填写的表单数据
-      if (this.mode === config.mode.render) {
-        this.$emit("on-submit", params);
-      }
     },
 
     // 渲染模式：重置表单验证状态
@@ -166,12 +131,47 @@ export default {
       }
     },
 
-    // 渲染模式：提交表单
-    submit(params) {
-      if (this.mode === config.mode.render) {
-        this.$refs.render.handleSubmit();
+    // 获取表单填写数据
+    getRenderData(){
+      if (this.nowMode === this.config.mode.render) {
+        console.log(this.$refs.render.handleSubmit())
+        return this.$refs.render.handleSubmit();
       }
-    }
+    },
+
+    // 自定义事件：数据改变事件
+    changeEvent(params ,action){
+      this.$emit("on-change", params, action);
+    },
+
+    // =======================
+
+    // // 构建模式：清空表单构建器数据
+    // clearFormBuilderData() {
+    //   if (this.mode === config.mode.builder) {
+    //     this.$refs.builder.clearEvent();
+    //   }
+    // },
+
+    // // 构建模式&渲染模式：发送表单构建器数据
+    // sendFormBuilderData(params) {
+    //   // 自定义事件：表单构建器-构建模式，保存数据
+    //   if (this.mode === config.mode.builder) {
+    //     this.$emit("on-save", params);
+    //   }
+
+    //   // 自定义事件：表单构建器-渲染模式，发送当前填写的表单数据
+    //   if (this.mode === config.mode.render) {
+    //     this.$emit("on-submit", params);
+    //   }
+    // },
+
+    // 渲染模式：提交表单
+    // submit(params) {
+    //   if (this.mode === config.mode.render) {
+    //     this.$refs.render.handleSubmit();
+    //   }
+    // }
   }
 };
 </script>

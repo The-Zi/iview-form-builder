@@ -2,7 +2,7 @@
  * @Author: The-Zi
  * @Date: 2018-07-04 17:11:32
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-07-18 14:24:14
+ * @Last Modified time: 2018-08-27 16:34:30
  */
 /*
  * @Author: The-Zi
@@ -24,7 +24,7 @@
     'form-grid-wrap': true,
     'form-grid-wrap-mobile': nowDevice === devicesOption.mobile && nowMode !== modeOption.detailed,
   }">
-    <Form ref="tempForm" :model="tempForm" label-position="top" inline>
+    <Form ref="tempForm" :model="tempForm" label-position="top">
       <!-- 表单行 -->
       <Col span="24" v-for="(row, rowIndex) in modulesData" :key="rowIndex"
       :class="{
@@ -117,12 +117,13 @@
                         <iview-form-builder-grid
                         :mode="modeOption.detailed"
                         :device="nowDevice"
-                        :data="handleDetailData(modules)"
+                        :renderData="handleDetailData(modules)"
                         :calculator="calculatorList"
                         :countFormula="countFormulaList"
+                        :beforDeleteModule="beforDeleteModule"
                         @count="performCount"
                         @findCalculator="addCalculatorList(modules, $event)"
-                        @delCalculator="delCalculatorList(modules, $event)"
+                        @delCalculator="delCalculatorList"
                         @addModuels="addDetailElement(modules, $event)"
                         @setModuels="setDetailElement(modules, $event)"
                         @delModuels="delDetailElement(modules, $event)"
@@ -192,7 +193,9 @@
         <!-- 设为必填项 -->
         <!-- 表单组件：说明文本 和 明细，不需要必填项设置 -->
         <FormItem v-if="moduleConfig.type !== module.textRead.type &&
-        moduleConfig.type !== module.detailed.type" label="设为必填项：">
+        moduleConfig.type !== module.detailed.type"
+        label="设为必填项：">
+        <!-- moduleConfig.type !== module.detailed.type && moduleConfig.type !== module.count.type" -->
           <Checkbox v-model="moduleConfig.require"></Checkbox>
         </FormItem>
 
@@ -244,7 +247,7 @@
         <template v-if="moduleConfig.type === module.count.type">
           <FormItem label="计算公式：">
             <!-- 当前的计算公式 -->
-            <Input v-model="moduleConfig.nowFormulas" placeholder="请输入计算公式 " :readonly="true"
+            <Input v-model="moduleConfig.countFormulasDisplay" placeholder="请输入计算公式 " :readonly="true"
             @click.native="editFormulasModal">
             </Input>
           </FormItem>
@@ -403,14 +406,14 @@
               <p style="color:red;" v-if="!moduleConfig.formulasValid">编辑的公式不符合计算法则，无法计算</p>
               <!-- 计算公式显示框 -->
               <div class="formulas-show-zoon">
-                <p v-html="moduleConfig.tempFormulas"></p>
+                <p v-html="moduleConfig.countFormulasEditor"></p>
               </div>
 
               <div style="text-align: right;">
                 <Icon class="formulas-minus" type="backspace-outline" @click.native="delTempCalculator"></Icon>
                 <span class="formulas-clear" @click="delTempCalculator('all')">清空</span>
               </div>
-              <!-- <Input v-model="moduleConfig.tempFormulas" :readonly="true"
+              <!-- <Input v-model="moduleConfig.countFormulasEditor" :readonly="true"
               placeholder="请在下方选择计算对象和计算符号">
                 <Button slot="append" icon="backspace-outline" @click.native="delTempCalculator"></Button>
                 <Button slot="append" @click.native="delTempCalculator('all')">清空</Button>
@@ -433,14 +436,14 @@
             </Col>
 
             <Col span="20">
-              <template  v-for="(item, index) in nowCalculatorList">
+              <template  v-for="(item, index) in calculatorList">
                 <Button v-if="item.id !== moduleConfig.id" size="small"  @click.native="editFormulas(item)"
                 :key="index" style="margin:0 5px 2px 0;">
                   {{item.label}}
                 </Button>
               </template>
               <!-- 通过将nowCalculatorList转成JSON格式的字符串判断其是否为空对象 -->
-              <p v-if="JSON.stringify(nowCalculatorList) === '{}'">
+              <p v-if="JSON.stringify(calculatorList) === '{}'">
                 没有可计算的对象，请返回表单添加
               </p>
             </Col>
@@ -543,20 +546,8 @@ export default {
       default: Array
     },
 
-    // 计算对象
-    calculator: {
-      default: Object
-    },
-
-    // 计算公式
-    countFormula: {
-      default: Object
-    },
-
     // 生命周期钩子：在删除组件前
-    beforDeleteModule: {
-      default: Function
-    }
+    beforDeleteModule: ""
   },
 
   // 自定义指令
@@ -638,14 +629,13 @@ export default {
       modulesIndex: {},
       // 表单组件-明细，表单数据
       detailedRenderData: {},
-      // // 可计算对象列表
-      // calculatorList: {},
-      // // 计算公式组件列表
-      // countFormulaList: {},
+      // 可计算对象列表
+      calculatorList: {},
+      // 计算公式组件列表
+      countFormulaList: {},
+      // 计算对象标记
       calculatorMark:
-        'data-formulas="bukegenggaiyongyupanduanjisuanduixiangdebaijifuhao"',
-      // 明细组件内计算公式
-      detailedCountFoumula: {}
+        'data-formulas="bukegenggaiyongyupanduanjisuanduixiangdebaijifuhao"'
     };
   },
 
@@ -665,24 +655,6 @@ export default {
         return this.calculator;
       } else {
         return this.calculatorList;
-      }
-    },
-    // 可计算对象列表
-    calculatorList: {
-      get: function() {
-        return this.calculator;
-      },
-      set: function(newValue) {
-        this.calculator = Object.assign({}, this.calculator, newValue);
-      }
-    },
-    // 计算公式组件列表
-    countFormulaList: {
-      get: function() {
-        return this.countFormula;
-      },
-      set: function(newValue) {
-        this.countFormula = Object.assign({}, this.countFormula, newValue);
       }
     }
   },
@@ -722,6 +694,32 @@ export default {
       }
 
       return result;
+    },
+
+    // 有效数组检查
+    trueArrCheck: function(params) {
+      // 判断是否有效的数组值
+      if (Array.isArray(params)) {
+        // 有效值的数量
+        let trueVal = 0;
+
+        // 判断数组内元素是否全部是有效值
+        for (let index = 0; index < params.length; index++) {
+          if (params[index]) {
+            trueVal += 1;
+          }
+        }
+
+        // 只有在全部元素都有效的情况下，才判为有效值
+        if (trueVal === params.length) {
+          return params
+        // 无效值，设为空数组，触发表单验证规则
+        } else {
+          return [];
+        }
+      } else {
+        return params;
+      }
     },
 
     // 获取表单数据模板
@@ -783,7 +781,7 @@ export default {
           tempItem.value = "";
           tempItem.name = "is_excess_budget";
           tempItem.require = true;
-          tempItem.itemList = [0, 1];
+          tempItem.itemList = ["预算内", "预算外"];
           break;
 
         // 文本输入框
@@ -824,27 +822,28 @@ export default {
           // 表单组件提示信息/占位符
           tempItem.tips = "";
           tempItem.value = null;
-          // 有效的计算公式，编辑完成后最后保存用的计算公式
-          tempItem.validFormulas = "";
-          // 当前计算公式，用于在计算公式组件配置界面显示，由数学计算符号和可计算对象的label组成
-          tempItem.nowFormulas = "";
-          // 临时计算公式,用于编辑计算公式时使用，由数学计算符号和用html显示的可计算对象的label组成
-          tempItem.tempFormulas = "";
           // 计算用计算公式，用于执行计算，由数学计算符号和可计算对象的id组成
           tempItem.countFormulas = "";
-          // 临时计算公式用于
-          tempItem.tempCountFormulas = "";
+          // 显示用当前计算公式
+          // 用于在计算公式组件配置界面显示
+          // 由数学计算符号和可计算对象的label组成
+          tempItem.countFormulasDisplay = "";
+          // 有效的计算公式，编辑完成后最后保存用的计算公式
+          tempItem.validFormulas = "";
+          // 临时计算公式,用于编辑计算公式时使用，由数学计算符号和用html显示的可计算对象的label组成
+          tempItem.countFormulasEditor = "";
+          // 临时计算公式用于验证计算公式的有效性
+          tempItem.countFormulasVerify = "";
           // 当前计算公式组件的计算公式有效性
           tempItem.formulasValid = true;
-
           tempItem.resultTips = "大写：";
           tempItem.unit = "";
           tempItem.cnNum = "";
           tempItem.showUpper = true;
-          tempItem.rounding = 0;
+          tempItem.rounding = 10;
           tempItem.roundingOption = [
             {
-              value: 0,
+              value: 10,
               label: "取整"
             },
             {
@@ -987,11 +986,6 @@ export default {
           tempItem.renderTemplate = [];
           tempItem.actionPlus = "增加";
           tempItem.actionMinus = "减少";
-          // 测试用默认数据
-          // let x = '[[[{"type":"count","id":"count-1532399028599","value":null,"require":false,"name":"count1532399028599","title":"计算公式","label":"总价","tips":"","validFormulas":"   单价 × 数量","nowFormulas":"总价 =   单价 × 数量","tempFormulas":"总价 =    <span data-formulas=\"bukegenggaiyongyupanduanjisuanduixiangdebaijifuhao\" style=\"display: inline-block;padding: 0 2px;margin: 2px 0;border-radius: 3px; padding: 2px 7px;border: 1px solid #dddee1;font-size: 12px; background-color: #f7f7f7;\">单价</span> × <span data-formulas=\"bukegenggaiyongyupanduanjisuanduixiangdebaijifuhao\" style=\"display: inline-block;padding: 0 2px;margin: 2px 0;border-radius: 3px; padding: 2px 7px;border: 1px solid #dddee1;font-size: 12px; background-color: #f7f7f7;\">数量</span>","countFormulas":"&nbsp;inputNumber-1532399056031&nbsp;×&nbsp;inputNumber-1532399096338","tempCountFormulas":"&nbsp;inputNumber-1532399056031&nbsp;×&nbsp;inputNumber-1532399096338","formulasValid":true,"resultTips":"大写：","unit":"","cnNum":"","showUpper":true,"rounding":0,"roundingOption":[{"value":0,"label":"取整"},{"value":1,"label":"保留小数点后 1 位数"},{"value":2,"label":"保留小数点后 2 位数"},{"value":3,"label":"保留小数点后 3 位数"},{"value":4,"label":"保留小数点后 4 位数"}]},{"type":"detailed","id":"detailed-1532399038823","value":"","require":false,"name":"detailed1532399038823","title":"明细","label":"","renderTemplate":[{"type":"inputNumber","id":"inputNumber-1532399056031","value":null,"require":false,"name":"inputNumber1532399056031","title":"数字输入框","label":"单价","tips":"","max":20000,"min":0},{"type":"inputNumber","id":"inputNumber-1532399096338","value":null,"require":false,"name":"inputNumber1532399096338","title":"数字输入框","label":"数量","tips":"","max":20000,"min":0}],"actionPlus":"增加","actionMinus":"减少"}]]]';
-          // tempItem.renderTemplate[0] = JSON.parse(x)[0][0][0];
-          // tempItem.renderTemplate[1] = JSON.parse(x)[0][0][1];
-          // tempItem.renderTemplate[2] = JSON.parse(x)[0][0][2];
           break;
       }
 
@@ -1165,29 +1159,35 @@ export default {
       return chineseStr;
     },
 
-    // 计算公式编辑对话框
+    // 显示计算公式编辑对话框
     editFormulasModal: function() {
       // 重置编辑用临时计算公式
-      this.moduleConfig.tempFormulas = "";
+      this.moduleConfig.countFormulasEditor = "";
 
       // 预设编辑用临时计算公式为当前的计算公式
-      this.moduleConfig.tempFormulas = this.moduleConfig.label + " " + "=";
+      this.moduleConfig.countFormulasEditor = this.moduleConfig.label + "&nbsp;" + "=";
+
+      // 缓存当前的计算公式，用于编辑修改与验证有效性
+      this.moduleConfig.countFormulasVerify = this.moduleConfig.countFormulas;
 
       // 如果存在计算公式则对计算公式进行格式化处理
-      let formulas = this.moduleConfig.nowFormulas.split("=")[1].split(" ");
+      let formulas = this.moduleConfig.countFormulasVerify.split("&nbsp;");
 
-      // 将当前的计算公式解析成编辑用的计算公式样式
+      // 将当前的计算公式解析成带样式可读形式的计算公式
       for (let index = 0; index < formulas.length; index++) {
-        if (formulas[index].match(/[0-9\.\+\-\×\÷\(\)\s]/g)) {
-          this.moduleConfig.tempFormulas =
-            this.moduleConfig.tempFormulas + " " + formulas[index];
-        } else {
-          this.moduleConfig.tempFormulas =
-            this.moduleConfig.tempFormulas +
-            " " +
-            this.formulasStyle(formulas[index]);
+        const element = formulas[index];
+        if (element) {
+          if (element.search(/[0-9\.\+\-\×\÷\(\)\s]/g) === 0) {
+            this.moduleConfig.countFormulasEditor =
+              this.moduleConfig.countFormulasEditor + "&nbsp;" + element;
+          } else {
+            this.moduleConfig.countFormulasEditor =
+              this.moduleConfig.countFormulasEditor + "&nbsp;" +
+              this.formulasStyle({target:element, style: true});
+          }
         }
       }
+
 
       // 重置计算公式的有效性检查结果为正确
       this.moduleConfig.formulasValid = true;
@@ -1196,11 +1196,95 @@ export default {
       this.formulasSettingToogle = true;
     },
 
+    // 编辑计算公式
+    editFormulas: function(params) {
+        // 编辑用计算公式,在计算公式编辑框内显示，用于编辑计算公式时使用，
+        // 由数学计算符号和用html显示的可计算对象的label组成
+        // 缓存原来的编辑用计算公式
+        let temp = this.moduleConfig.countFormulasEditor;
+
+        // 删除原来的编辑用计算公式
+        this.$delete(this.moduleConfig, "countFormulasEditor");
+
+        // 重设新的编辑用计算公式
+        if (typeof params === "object") {
+
+          // 编辑用计算公式，新增计算对象label
+          this.$set(this.moduleConfig, "countFormulasEditor",
+          temp + "&nbsp;" + this.formulasStyle({target:params.id,style:true}));
+
+          // 临时计算用计算公式，用于验证计算公式的正确性
+          if (this.moduleConfig.countFormulasVerify) {
+            this.moduleConfig.countFormulasVerify =
+              this.moduleConfig.countFormulasVerify + "&nbsp;" + params.id;
+          } else {
+            this.moduleConfig.countFormulasVerify = params.id;
+          }
+
+        // 新增数学计算符号
+        } else if (typeof params === "string") {
+
+          // 编辑用计算公式，新增计算对象符号
+          this.$set(this.moduleConfig, "countFormulasEditor",
+          temp + "&nbsp;" + this.formulasStyle({target:params,style:false}));
+
+          // 临时计算用计算公式，用于验证计算公式的正确性
+          if (this.moduleConfig.countFormulasVerify) {
+            this.moduleConfig.countFormulasVerify =
+              this.moduleConfig.countFormulasVerify + "&nbsp;" + params;
+          } else {
+            this.moduleConfig.countFormulasVerify = params;
+          }
+        }
+    },
+
+    // 删除计算对象
+    delTempCalculator: function(params) {
+      // 一次性清空所有
+      if (params === "all") {
+        // 清空编辑用计算公式
+        this.$delete(this.moduleConfig, "countFormulasEditor");
+        this.$set(this.moduleConfig, "countFormulasEditor", this.moduleConfig.label + "&nbsp;" + "=");
+
+        // 清空临时计算公式
+        this.moduleConfig.countFormulasVerify = "";
+      // 逐个删除
+      } else {
+        // 回删编辑用计算公式中的计算元素
+        let countFormulasEditor = this.moduleConfig.countFormulasEditor.split("&nbsp;");
+
+        // 只能回删到等于号之前
+        if (countFormulasEditor.length > 2) {
+          countFormulasEditor.splice(countFormulasEditor.length - 1,1);
+
+          this.$delete(this.moduleConfig, "countFormulasEditor");
+          this.$set(this.moduleConfig, "countFormulasEditor", countFormulasEditor.join("&nbsp;"));
+
+          // 回删临时计算公式中的计算元素
+          let countFormulasVerify = this.moduleConfig.countFormulasVerify.split("&nbsp;");
+
+          countFormulasVerify.splice(countFormulasVerify.length - 1, 1);
+          this.moduleConfig.countFormulasVerify = countFormulasVerify.join("&nbsp;");
+        }
+      }
+    },
+
     // 计算公式编辑-隐藏对话框
     closeFormulasSetting: function() {
       // 重置当前显示用计算公式
-      this.moduleConfig.nowFormulas =
-        this.moduleConfig.label + " = " + this.moduleConfig.validFormulas;
+      // this.moduleConfig.countFormulasDisplay = this.moduleConfig.countFormulasDisplay.split("=")[0] + "=";
+
+      // // 数组化计算公式
+      // let formulasArr = this.moduleConfig.countFormulas.split("&nbsp;");
+
+      // // 处理计算公式，转为可读形式
+      // for (let index = 0; index < formulasArr.length; index++) {
+      //   const element = formulasArr[index];
+      //   if (element) {
+      //     this.moduleConfig.countFormulasDisplay = this.moduleConfig.countFormulasDisplay +
+      //     this.formulasStyle({target: element, style: false});
+      //   }
+      // }
 
       // 关闭计算公式编辑对话框
       this.formulasSettingToogle = false;
@@ -1208,39 +1292,51 @@ export default {
 
     // 计算公式编辑-保存
     saveFormulasSetting: function() {
-      // 将需要保持的计算公式中的计算对象名称全部替换成10
       let countStatus;
       let countFormulas = "";
-      // let count = this.moduleConfig.tempCountFormulas.replace(/([^\+\-\×\÷\(\)\.\d]+)/g,"10");
+      let countRules  = new RegExp(/[\.\+\-\×\÷\(\)]/, "g");
+
       // 重置验证状态
       this.moduleConfig.formulasValid = true;
-      // 判断是否
-      if (
-        this.moduleConfig.tempFormulas.match(
-          "</span> <span " + this.calculatorMark
-        )
-      ) {
+
+      // 格式化计算公式为计算机可以识别的形式，并将计算公式中的值都设为10，用于检验计算公式是否正确
+      let countFormulasVerify = this.moduleConfig.countFormulasVerify.split("&nbsp;");
+
+      // 如果以加减和小数点开头或结尾,则直接判为无效的计算公式
+      if (countFormulasVerify[0].search(/[\.\+\-]/g) === 0 ||
+      countFormulasVerify[countFormulasVerify.length - 1].search(/[\.\+\-]/g) === 0) {
         this.moduleConfig.formulasValid = false;
         return;
       }
 
-      // 格式化计算公式为计算机可以识别的形式用于判断计算公式是否正确
-      let tempFormulas = this.moduleConfig.tempCountFormulas.split("&nbsp;");
-      for (let index = 0; index < tempFormulas.length; index++) {
-        if (
-          typeof Number(tempFormulas[index]) === "number" &&
-          Number(tempFormulas[index]) === Number(tempFormulas[index])
-        ) {
-          countFormulas = countFormulas + tempFormulas[index];
-        } else if (tempFormulas[index].search(/[\.\+\-\×\÷\(\)]/g) === 0) {
-          countFormulas = countFormulas + tempFormulas[index];
-        } else {
-          countFormulas = countFormulas + 10;
+      // 处理计算公式，将计算公式中的计算对象全部替换为10，用于测试计算公式的有效性
+      for (let index = 0; index < countFormulasVerify.length; index++) {
+        const element = countFormulasVerify[index];
+
+        // 以防万一，过滤计算公式分割成数组后内部的空字符串元素
+        if (element) {
+          // 数字不作处理
+          if (typeof Number(element) === "number" && Number(element) === Number(element)) {
+            countFormulas = countFormulas + element;
+          // 数学计算符号不作处理
+          } else if (element.search(/[\.\+\-\×\÷\(\)]/g) === 0) {
+            countFormulas = countFormulas + element;
+          // 正确的存在的计算对象
+          } else if(this.calculatorList[element]) {
+            countFormulas = countFormulas + 10;
+          }
         }
       }
 
+      // 转换乘法和除法符号为计算机可识别的形式
       countFormulas = countFormulas.replace(/\×/g, "*");
       countFormulas = countFormulas.replace(/\÷/g, "/");
+
+      // 如果处理完的计算公式中不包含数学计算符号则直接判为无效的计算公式
+      if (Number(countFormulas) && !isNaN(countFormulas)) {
+        this.moduleConfig.formulasValid = false;
+        return;
+      }
 
       // 执行替换处理后的计算公式，判断是否为有效的计算公式
       try {
@@ -1254,6 +1350,29 @@ export default {
 
       // 只有当计算公式为有效时，才能保存
       if (countStatus === true) {
+        // 保存当前有效的计算公式
+        this.moduleConfig.countFormulas = this.moduleConfig.countFormulasVerify;
+
+        // 更新当前编辑对话框内显示的计算公式
+        let formulas = this.moduleConfig.countFormulas.split("&nbsp;");
+
+        this.moduleConfig.countFormulasDisplay = this.moduleConfig.label + "=";
+
+      // 将当前的计算公式解析成带样式可读形式的计算公式
+      for (let index = 0; index < formulas.length; index++) {
+        const element = formulas[index];
+        if (element) {
+          if (element.search(/[0-9\.\+\-\×\÷\(\)\s]/g) === 0) {
+            this.moduleConfig.countFormulasDisplay =
+              this.moduleConfig.countFormulasDisplay + element;
+          } else {
+            this.moduleConfig.countFormulasDisplay =
+              this.moduleConfig.countFormulasDisplay +
+              this.formulasStyle({target:element, style: false});
+          }
+        }
+      }
+
         // 关闭对话框
         this.formulasSettingToogle = false;
         // 不是有效的计算公式
@@ -1262,189 +1381,220 @@ export default {
       }
     },
 
-    // 删除计算对象
-    delTempCalculator: function(params) {
-      // 一次性清空所有
-      if (params === "all") {
-        // 临时编辑用计算公式
-        this.moduleConfig.tempFormulas = this.moduleConfig.label + " " + "=";
+    // 处理计算公式
+    handleFormulas: function(params) {
+      if (Array.isArray(params) && params.length > 0) {
+        // 保存筛选出来的，计算公式中包含的，明细组件内计算对象id的位置
+        let formulaIndex = [];
+        // 筛选出来的，计算公式中包含的，明细组件内计算对象的值
+        let formulaValue = {};
 
-        // 同时清空当前显示用的计算公式
-        this.moduleConfig.nowFormulas = this.moduleConfig.label + " " + "=";
-
-        // 临时计算用计算公式
-        this.moduleConfig.tempCountFormulas = "";
-        // 一次删除一个
-      } else {
-        // 取出计算公式
-        let formulas = this.moduleConfig.nowFormulas.split("=");
-        let targetFormulas = formulas[1].split(" ");
-        targetFormulas.splice(targetFormulas.length - 1, 1);
-
-        this.moduleConfig.nowFormulas =
-          this.moduleConfig.label + " " + "=" + " " + targetFormulas.join(" ");
-
-        // 重置编辑用临时计算公式
-        this.moduleConfig.tempFormulas = this.moduleConfig.label + " " + "=";
-
-        // 更新删除后的编辑用临时计算公式
-        for (let index = 0; index < targetFormulas.length; index++) {
-          if (targetFormulas[index].match(/[0-9\.\+\-\×\÷\(\)]/g)) {
-            this.moduleConfig.tempFormulas =
-              this.moduleConfig.tempFormulas + " " + targetFormulas[index];
+        // 检查是否有效值
+        let checkValue = (params)=>{
+          if (params && Number(params) && !isNaN(params)) {
+            return params
           } else {
-            this.moduleConfig.tempFormulas =
-              this.moduleConfig.tempFormulas +
-              " " +
-              this.formulasStyle(targetFormulas[index]);
+            return 0
+          }
+        };
+
+        // 包含明细组件内计算对象的计算公式处理结果集合
+        let formulasResultArr = [];
+
+        // 遍历计算公式
+        for (let index = 0; index < params.length; index++) {
+          const formulaElement = params[index];
+          // 过滤出计算公式中的计算对象Id
+          if (/[a-zA-Z]/g.test(formulaElement)) {
+            // 如果当前是在表单构建器的构建模式下，
+            // 并且根据计算公式中的计算对象id，没在计算对象列表中找到对应的计算对象时，直接退出，防止找不到对象报错
+            // 一般只有在表单构建器的构建模式下，编辑表单结构时才有可能出现
+            if (this.nowMode === this.modeOption.builder && !this.calculatorList[formulaElement]) {
+              return false
+            }
+
+            // 根据过滤出的计算对象id，筛选出计算对象列表中对应的计算对象的值
+            for (const key in this.calculatorList) {
+              if (this.calculatorList.hasOwnProperty(key)) {
+                // 筛选计算公式中，包含的明细组件内计算对象id
+                if (this.calculatorList[key].id.match(formulaElement + "-")) {
+                  // 保存筛选出来的， 计算公式中包含的，明细组件内计算对象id的位置
+                  formulaIndex.push(index);
+
+                  // 以位置下标为属性名，保存筛选出来的， 计算公式中包含的，明细组件内计算对象的值
+                  if (Array.isArray(formulaValue[index])) {
+                    formulaValue[index].push(checkValue(this.calculatorList[key].value));
+                  } else {
+                    formulaValue[index] = [];
+                    formulaValue[index].push(checkValue(this.calculatorList[key].value));
+                  }
+
+                // 将非明细组件内的计算对象的值替换进计算公式中
+                } else if(params[index] === this.calculatorList[key].id) {
+                  params[index] = checkValue(this.calculatorList[key].value);
+                }
+              }
+            }
           }
         }
-      }
-    },
 
-    // 编辑计算公式
-    editFormulas: function(params) {
-      if (typeof params === "object") {
-        // 临时计算公式,在计算公式编辑框内显示，用于编辑计算公式时使用，
-        // 由数学计算符号和用html显示的可计算对象的label组成
-        this.moduleConfig.tempFormulas =
-          this.moduleConfig.tempFormulas +
-          " " +
-          this.formulasStyle(params.label);
+        // 如果查到的计算公式中，包含的明细组件内计算对象的数量大于0
+        // 则根据
+        if (formulaIndex.length > 0) {
+          // 复制当前已替换了非明细组件内计算对象id的计算公式数组
+          // 用于接下来的操作，避免影响到下一次操作
+          let formulasHandleResult = params.concat();
+          // 计算器，用于查找同一个位置，在本轮替换中需要替换进去的值
+          let counter = 0;
+          // 临时处理结果，用于将乘法和除法符号替换为计算机可识别的星号和斜杠
+          let tempHandleResult = "";
 
-        // 同时更新当前显示用的计算公式
-        this.moduleConfig.nowFormulas =
-          this.moduleConfig.nowFormulas + " " + params.label;
+          // 根据计算公式中任意一个，明细组件内相同计算对象值的数量，来判断需要生成的计算公式数量
+          // 因为值的数量就代表着，明细组件内有多少个相同的计算对象，而每一个相同的计算对象
+          // 都应该对应一个计算公式
+          for (let index = 0; index < formulaValue[formulaIndex[0]].length; index++) {
+            // 通过计算对象id在计算公式中的位置，确定需要插入值的位置
+            for (let index = 0; index < formulaIndex.length; index++) {
+              const element = formulaIndex[index];
 
-        // 临时计算用计算公式，用于执行实际的计算
-        this.moduleConfig.tempCountFormulas =
-          this.moduleConfig.tempCountFormulas + "&nbsp;" + params.id;
-      } else if (typeof params === "string") {
-        // 临时计算公式,在计算公式编辑框内显示，用于编辑计算公式时使用，
-        // 由数学计算符号和用html显示的可计算对象的label组成
-        this.moduleConfig.tempFormulas =
-          this.moduleConfig.tempFormulas + " " + params;
+              // 根据计算器，确认需要插入的是第几个值
+              if (counter <= formulaValue[element].length - 1) {
+                formulasHandleResult[element] = formulaValue[element][counter];
+              }
+            }
 
-        // 同时更新当前显示用的计算公式
-        this.moduleConfig.nowFormulas =
-          this.moduleConfig.nowFormulas + " " + params;
+            // 替换乘法和除法符号
+            tempHandleResult = formulasHandleResult.join("").replace(/[×]/g, "*");
+            tempHandleResult = tempHandleResult.replace(/[÷]/g, "/");
 
-        // 临时计算用计算公式，用于执行实际的计算
-        this.moduleConfig.tempCountFormulas =
-          this.moduleConfig.tempCountFormulas + "&nbsp;" + params;
+            // 保存本轮替换完成的计算公式
+            formulasResultArr.push(tempHandleResult);
+
+            // 计数器加1，修改一下轮需要替换进去的值
+            counter += 1;
+          }
+
+          // 返回处理完成的计算公式
+          return formulasResultArr
+
+        // 否则，只需直接返回被替换了，非明细组件内的计算对象的值，的计算公式
+        } else {
+          // 复制当前已替换了非明细组件内计算对象id的计算公式数组
+          // 用于接下来的操作，避免影响到下一次操作
+          let formulasHandleResult = params.concat();
+
+          // 替换乘法和除法符号
+          tempHandleResult = formulasHandleResult.join("").replace(/[×]/g, "*");
+          tempHandleResult = tempHandleResult.replace(/[÷]/g, "/");
+
+          // 保存本轮替换完成的计算公式
+          formulasResultArr.push(tempHandleResult);
+
+          // 返回处理完成的计算公式
+          return formulasResultArr
+        }
       }
     },
 
     // 执行计算
-    performCount: function(params, source) {
-      // 自定义事件：计算
-      // 计算明细内的可计算对象
-      this.$emit("count", params, source);
+    performCount: function(params = {}) {
 
-      // 计算公式处理
+      // 删除计算对象&计算公式对象
+      if (params.action === "del" && Array.isArray(params.modulesId) && params.modulesId.length > 0) {
+        for (let index = 0; index < params.modulesId.length; index++) {
+          const element = params.modulesId[index];
+          // 计算对象
+          if (this.calculatorList[element]) {
+            delete this.calculatorList[element];
+          }
+
+          // 计算公式
+          if (this.countFormulaList[element]) {
+            delete this.countFormulaList[element];
+          }
+        }
+      }
+
+      // 计算公式处理并计算
       for (const key1 in this.countFormulaList) {
         if (this.countFormulaList.hasOwnProperty(key1)) {
           // 拥有计算公式的情况下才执行计算操作
           if (this.countFormulaList[key1].countFormulas) {
+
             // 目标计算公式组件
             let targetFormula = this.countFormulaList[key1];
             // 修改后的计算公式结果
             let formulaResult = "";
+            // 计算公式的计算结果
+            let countResult = 0;
 
-            // 可计算对象
-            for (const key2 in this.calculatorList) {
-              if (this.calculatorList.hasOwnProperty(key2)) {
-                // 需要替换进去的可计算对象
-                let targetCalculator = this.calculatorList[key2];
-                // 将计算用计算公式中，每个可计算对象的id，替换为它们对应的可计算对象的值
-                let rules = new RegExp(targetCalculator.id, "g");
-
-                // 对来自表单组件：明细，的计算对象的id进行处理，以获取其在计算公式配置中对应的id
-                if (
-                  source === this.modeOption.detailed &&
-                  targetCalculator.id === params.id
-                ) {
-                  let targetID =
-                    params.id.split("-")[0] + "-" + params.id.split("-")[1];
-                  rules = new RegExp(targetID, "g");
-                }
-
-                // 将值替换进计算公式中对应的位置
-                if (formulaResult) {
-                  formulaResult = formulaResult.replace(
-                    rules,
-                    targetCalculator.value
-                  );
-                } else {
-                  formulaResult = targetFormula.countFormulas.replace(
-                    rules,
-                    targetCalculator.value
-                  );
-                }
-
-                // 替换计算公式结果中的乘除计算符号
-                formulaResult = formulaResult.replace(/[×]/, "*");
-                formulaResult = formulaResult.replace(/[÷]/, "/");
-              }
-            }
+            // 处理当前计算公式组件的计算公式
+            formulaResult = this.handleFormulas(targetFormula.countFormulas.split("&nbsp;"));
 
             // 执行计算
             try {
               // 根据计算公式计算结果
-              let countResult = eval(
-                formulaResult
-                  .toString()
-                  .split("&nbsp;")
-                  .join("")
-              );
-
-              // 如果计算对象来自表单组件：明细,并且之前执行的计算不包括该计算对象，则新的计算结果与旧的计算结果相加
-              if (
-                source === this.modeOption.detailed &&
-                !this.detailedCountFoumula[params.id]
-              ) {
-                targetFormula.value =
-                  Number(targetFormula.value) +
-                  Number(countResult.toFixed(targetFormula.rounding));
-
-                // 保存当前计算对象用于下次计算时判断是否其来源以及是否需要与旧结果相加
-                this.detailedCountFoumula[params.id] = {
-                  id: params.id,
-                  value: typeof params.value === "null" ? 0 : params.value
-                };
-
-                // 普通情况下的计算 与 来自于表单组件：明细，但之前执行的计算包括该计算对象
-              } else {
-                targetFormula.value = Number(
-                  countResult.toFixed(targetFormula.rounding)
-                );
+              for (let index = 0; index < formulaResult.length; index++) {
+                let formula = formulaResult[index];
+                countResult = Number(countResult) + Number(eval(formula));
               }
-
-              // 将计算结果转换成中文大写数字金额
-              this.moneyFormat(targetFormula);
+              let rounding = targetFormula.rounding === 10? 0 : targetFormula.rounding;
+              targetFormula.value = Number(countResult.toFixed(rounding));
             } catch (error) {
+              console.log("计算公式出错：");
               console.log(error);
             }
+
+            // 将计算结果转换成中文大写数字金额
+            this.moneyFormat(targetFormula);
           }
         }
       }
+
+      // 计算明细内的可计算对象
+      this.$emit("count", params);
     },
 
     // 计算公式样式设置
     formulasStyle: function(params) {
-      if (!params) {
-        return "";
+      // 查找对应的可计算对象，获取其当前的label
+      let label = "";
+      let color = "#495060";
+
+      // 遍历计算对象列表
+      // 拼入计算对象当前的label
+      if (this.calculatorList[params.target]) {
+        label = this.calculatorList[params.target].label;
+      // 拼入数学计算符号
+      } else if(params.target.replace(/[\.\+\-\×\÷\(\)]/g, "") === "") {
+        label = " " + params.target + " ";
+      // 拼入数字
+      } else if (typeof Number(params.target) === "number" && !isNaN(params.target)) {
+        label = params.target;
+      // 标记已被删除的计算对象
+      } else if(!this.calculatorList[params.target]){
+        label = "已删除";
+
+        // 标记不存在的计算对象
+        color = "red";
       }
-      // 返回编辑用临时计算公式
-      return (
-        '<span ' +
-        this.calculatorMark +
-        ' style="display: inline-block;padding: 0 2px;margin: 2px 0;' +
-        'border-radius: 3px; padding: 2px 7px;border: 1px solid #dddee1;' +
-        'font-size: 12px; background-color: #f7f7f7;">' +
-        params +
-        '</span>'
-      );
+
+      // 是否需要带有样式的label
+      if (params.style === true) {
+        // 返回带有样式的计算对象label
+        return (
+          '<span ' +
+          // this.calculatorMark +
+          ' style="display: inline-block;' +
+          'border-radius: 3px; padding: 2px 7px;border: 1px solid #dddee1;' +
+          'color: '+ color +'; font-size: 12px; background-color: #f7f7f7;">' +
+          label +
+          '</span>'
+        );
+      } else {
+        // 没有样式的计算对象label
+        return label;
+      }
     },
 
     // 保存可计算对象
@@ -1482,8 +1632,8 @@ export default {
     },
 
     // 表单组件-明细: 删除可计算对象列表中的指定对象
-    delCalculatorList: function(params, $event) {
-      this.$delete(this.calculatorList, params.id);
+    delCalculatorList: function(params) {
+      this.$delete(this.calculatorList, params);
     },
 
     // 表单组件-明细，数据处理
@@ -1500,7 +1650,14 @@ export default {
         this.detailedRenderData[params.id][0][0].length === 0
       ) {
         for (let index = 0; index < params.renderTemplate.length; index++) {
-          let temp = Object.assign({}, params.renderTemplate[index]);
+          let temp = {};
+          if (this.nowMode === this.modeOption.builder) {
+            temp = params.renderTemplate[index];
+          } else {
+            temp = Object.assign({}, params.renderTemplate[index]);
+          // let temp = this.deepClone(params.renderTemplate[index])
+          }
+
           this.detailedRenderData[params.id][0][0].push(temp);
         }
       }
@@ -1547,7 +1704,7 @@ export default {
       // }
     },
 
-    // 表单组件-明细 v1.0.0 自增明细内原始模板组件
+    // 表单组件-明细，自增明细内原始模板组件
     plusDetailModuels: function(params) {
       // 只有在表单构建器的渲染模式下，才能根据明细的原始模板数据自增表单组件
       if (this.nowMode === this.modeOption.render) {
@@ -1581,82 +1738,41 @@ export default {
       }
     },
 
-    // 表单组件-明细 v2.0.0 自增整个明细
-    plusDetail: function(params) {
-      let result = {};
-
-      for (const key in params.module) {
-        if (params.module.hasOwnProperty(key)) {
-          if (typeof params.module[key] === "Object") {
-            result[key] = Object.assign({}, params.module[key]);
-          } else {
-            result[key] = params.module[key];
-          }
-        }
-      }
-
-      // 在id和name属性后新增一个唯一的随机数，以防重复
-      let random1 = Math.random();
-      let random2 = Math.random();
-
-      if (random1 === random2) {
-        random1 = random1 - 0.01;
-      }
-
-      result.id = result.id + "-" + random1.toString().split(".")[1];
-      result.name = result.name + "-" + random2.toString().split(".")[1];
-      this.detailedRenderData[result.id] = this.getFormDataTemplate();
-
-      this.plusDetailModuels(params.module);
-      params.col.push(result);
-    },
-
-    // 表单组件-明细 自减明细内原始模板组件
+    // 表单组件-明细，自减明细内原始模板组件
     minusDetailModuels: function(params) {
-      if (this.nowMode === this.modeOption.render) {
-        // 已有或默认的渲染数据
-        let target = this.detailedRenderData[params.id][0][0];
+      // if (this.nowMode === this.modeOption.render) {
+      //   // 已有或默认的渲染数据
+      //   let target = this.detailedRenderData[params.id][0][0];
 
+      //   // 保留最后一组组件,作为原始数据,不完成删完
+      //   if (target.length > params.renderTemplate.length) {
+      //     // 循环删除,每次都删除最后一个组件,有多少个原始表单组件就循环多少次
+      //     // 达到每次删除都删除一组原始数据
+      //     for (let index = 0; index < params.renderTemplate.length; index++) {
+      //       target.splice(target.length - 1, 1);
+      //     }
+      //   }
+      // }
+
+      if (this.nowMode === this.modeOption.detailed) {
+        let modulesId = [];
         // 保留最后一组组件,作为原始数据,不完成删完
-        if (target.length > params.renderTemplate.length) {
-          // 循环删除,每次都删除最后一个组件,有多少个原始表单组件就循环多少次
-          // 达到每次删除都删除一组原始数据
-          for (let index = 0; index < params.renderTemplate.length; index++) {
-            target.splice(target.length - 1, 1);
+        if (this.formData.length > 1) {
+          // 删除可计算对象
+          for (let index = 0; index < row[0].length; index++) {
+            const module = row[0][index];
+            if (this.calculatorList[module.id]) {
+              delete this.calculatorList[module.id];
+              modulesId.push(module.id);
+            }
           }
+
+          // 删除一组表单组件
+          this.formData.splice(rowIndex, 1);
+
+          // 自定义事件：删除明细组件内组件
+          this.$emit("deleteDetailModules", {action: "del", modulesId: modulesId});
         }
-
-        // // 设置新数据
-        // this.$set(this.detailedRenderData, params.id, oldData);
-
-        // // 旧的渲染数据
-        // let oldData;
-        // // 处理结果
-        // let result = this.getFormDataTemplate();
-
-        // // 如果存在旧的渲染数据，就先将旧的数据独立出来保存
-        // if (this.detailedRenderData[params.id] && this.detailedRenderData[params.id][0][0].length > 0) {
-        //   oldData = this.detailedRenderData[params.id].slice(0);
-        // }
-
-        // // 删除原有的旧数据，在执行完所有处理之后再重新设置数据
-        // // 否则页面会无法刷新
-        // this.$delete(this.detailedRenderData, params.id);
-
-        // // 删除旧数据
-        // if (oldData) {
-        //   let target = oldData[0][0];
-        //   // 保留最后一组组件,作为原始数据,不完成删完
-        //   if (target.length > params.renderTemplate.length) {
-        //     // 循环删除,每次都删除最后一个组件,有多少个原始表单组件就循环多少次
-        //     // 达到每次删除都删除一组原始数据
-        //     for (let index = 0; index < params.renderTemplate.length; index++) {
-        //       oldData[0][0].splice(target.length - 1, 1);
-        //     }
-        //   }
-        //   // 设置新数据
-        //   this.$set(this.detailedRenderData, params.id, oldData);
-        // }
       }
     },
 
@@ -1692,16 +1808,21 @@ export default {
         this.moduleConfig.configValue = module.value.join("##");
       }
 
-      // 计算公式当前显示用计算公式默认值设置
+      // 计算公式组件，将计算用的计算公式处理成显示用的计算公式
       if (module.type === this.module.count.type) {
-        if (
-          this.moduleConfig.nowFormulas &&
-          this.moduleConfig.nowFormulas.match("=")
-        ) {
-          this.moduleConfig.nowFormulas =
-            module.label + " = " + this.moduleConfig.nowFormulas.split("=")[1];
-        } else {
-          this.moduleConfig.nowFormulas = module.label + " = ";
+        // 初始化显示用计算公式
+        this.moduleConfig.countFormulasDisplay = module.label + "=";
+
+        // 数组化计算公式
+        let formulasArr = this.moduleConfig.countFormulas.split("&nbsp;");
+
+        // 处理计算公式，转为可读形式
+        for (let index = 0; index < formulasArr.length; index++) {
+          const element = formulasArr[index];
+          if (element) {
+            this.moduleConfig.countFormulasDisplay = this.moduleConfig.countFormulasDisplay +
+            this.formulasStyle({target: element, style: false});
+          }
         }
       }
 
@@ -1727,7 +1848,8 @@ export default {
         module.type === this.module.checkbox.type ||
         module.type === this.module.select.type
       ) {
-        this.moduleConfig.itemList = this.moduleConfig.editList.split("##");
+        // this.moduleConfig.itemList = this.moduleConfig.editList.split("##");
+        this.moduleConfig.itemList = this.trueArrCheck(this.moduleConfig.editList.split("##"));
       }
 
       // 多选框组件配置
@@ -1735,17 +1857,16 @@ export default {
         let newVal = this.moduleConfig.configValue.split("##");
         // 待处理：值为空时，以##为分割符会得到一个空的值，这个空的值会影响必填项判断
         // 解决办法：1、增加判断；2、修改分割办法；
-        this.moduleConfig.value = this.moduleConfig.configValue.split("##");
+        // this.moduleConfig.value = this.moduleConfig.configValue.split("##");
+        this.moduleConfig.value = this.trueArrCheck(this.moduleConfig.configValue.split("##"));
       }
 
       // 计算公式组件配置
       if (module.type === this.module.count.type) {
         // 保存有效的计算公式，内部是label和计算符号
-        this.moduleConfig.validFormulas = this.moduleConfig.nowFormulas.split(
-          "="
-        )[1];
+        this.moduleConfig.validFormulas = this.moduleConfig.countFormulasDisplay.split("=")[1];
         // 保存计算用计算公式，内部是id和计算符号
-        this.moduleConfig.countFormulas = this.moduleConfig.tempCountFormulas;
+        this.moduleConfig.countFormulas = this.moduleConfig.countFormulasVerify;
       }
 
       // 配置验证正确，关闭对话框
@@ -1759,13 +1880,6 @@ export default {
                 this.modulesData[row][col][m][key] !== undefined
               ) {
                 // 更新表单组件数据
-                // if (typeof this.modulesData[row][col][m][key] === "object") {
-                //   this.modulesData[row][col][m][key] = this.deepClone(this.modulesData[row][col][m][key]);
-                //   console.log(key)
-                //   console.log(this.modulesData[row][col][m][key])
-                // } else {
-                //   this.modulesData[row][col][m][key] = this.moduleConfig[key];
-                // }
                 this.modulesData[row][col][m][key] = this.moduleConfig[key];
                 // 更新可计算对象
                 if (this.calculatorList[this.moduleConfig.id]) {
@@ -1776,25 +1890,6 @@ export default {
               }
             }
           }
-
-          // for (let index = 0; index < this.calculator.length; index++) {
-          //   if (this.moduleConfig.id === this.calculator[index].id ) {
-          //     for (const key in this.moduleConfig) {
-          //       if (key === "require" || key === "tips" || this.moduleConfig.hasOwnProperty(key)) {
-          //         this.calculator[index][key] = this.moduleConfig[key];
-          //         // 数组处理
-          //         // if (Array.isArray(this.moduleConfig[key])) {
-          //           // this.calculator[index][key] = [].count(this.moduleConfig[key]);
-          //         // 对象处理
-          //         // } else if(typeof this.moduleConfig[key] === "object") {
-          //           // this.calculator[index][key] = Object.assign({}, this.moduleConfig[key]);
-          //         // } else {
-          //           // this.calculator[index][key] = this.moduleConfig[key];
-          //         // }
-          //       }
-          //     }
-          //   }
-          // }
 
           // 自定义事件: 表单组件设置事件，以对象形式传递新添加的表单组件
           this.$emit("setModuels", this.modulesData[row][col][m]);
@@ -1821,37 +1916,57 @@ export default {
 
     // 删除组件
     delModule: function(params) {
-      if (this.beforDeleteModule(params.module.id)) {
-      let row = params.rowIndex;
-      let col = params.colIndex;
-      let m = params.mIndex;
+      // this指向当前表单构建器组件
+      let _that = this;
+      // 删除组件函数
+      let del = (param) => {
+        let row = params.rowIndex;
+        let col = params.colIndex;
+        let m = params.mIndex;
 
-      // 触发删除表单组件事件，以对象形式传递新添加的表单组件
-      if (this.nowMode === this.modeOption.detailed) {
-        // 自定义事件: 删除表单组件
-        this.$emit("delModuels", this.modulesData[row][col][m]);
-      }
+        // 触发删除表单组件事件，以对象形式传递新添加的表单组件
+        if (this.nowMode === this.modeOption.detailed) {
+          // 自定义事件: 删除表单组件
+          this.$emit("delModuels", this.modulesData[row][col][m]);
+        }
 
-      // 删除指定组件
-      this.modulesData[row][col].splice(m, 1);
-      // 减少该组件的数量计数器
-      if (this.modulesLength[params.module.type] > -1) {
-        this.modulesLength[params.module.type] =
-          this.modulesLength[params.module.type] - 1;
-      }
+        // 删除指定组件
+        this.modulesData[row][col].splice(m, 1);
+        // 减少该组件的数量计数器
+        if (this.modulesLength[params.module.type] > -1) {
+          this.modulesLength[params.module.type] =
+            this.modulesLength[params.module.type] - 1;
+        }
 
-      // 重置表单组件唯一下标计数器
-      if (this.modulesLength[params.module.type] < 0) {
-        this.modulesIndex[params.module.type] = -1;
-      }
+        // 重置表单组件唯一下标计数器
+        if (this.modulesLength[params.module.type] < 0) {
+          this.modulesIndex[params.module.type] = -1;
+        }
 
-      // 删除可计算对象
-      if (this.calculatorList[params.module.id]) {
-        this.$delete(this.calculatorList, params.module.id);
+        // 删除可计算对象
+        if (this.calculatorList[params.module.id]) {
+          this.$delete(this.calculatorList, params.module.id);
 
-        // 自定义事件：删除可计算对象
-        this.$emit("delCalculator", params.module.id);
-      }
+          // 自定义事件：删除可计算对象
+          this.$emit("delCalculator", params.module.id);
+        }
+      };
+
+      // 如果删除前生命周期钩子属性是一个函数，则先执行该函数，
+      // 并将：当前删除的组件数据、删除组件函数作为参数传递进去，在执行完删除前生命周期钩子函数后
+      // 需要执行传递进去的删除组件函数，才能够正常删除组件
+      // 执行删除组件前生命周期钩子函数，并将当前表单构建器的this传递进去，如有需要可以在
+      if (typeof this.beforDeleteModule === "function") {
+        this.beforDeleteModule(params.module, (fn=()=>{}) => {
+          // 删除组件函数
+          del();
+          // 回调函数，传递当前表单构建器的this
+          fn(_that);
+        });
+      // 如果不是一个函数，则直接执行删除组件函数
+      } else {
+        // 删除组件函数
+        del();
       }
     },
 
@@ -1896,7 +2011,7 @@ export default {
       // 表单组件下标计数器
       this.modulesIndex = {};
       // 可计算对象
-      // this.calculatorList = {};
+      this.calculatorList = {};
       // 表单组件-明细 的渲染数据
       this.detailedRenderData = {};
     },
@@ -1938,8 +2053,6 @@ export default {
         /(^[\d\s\n\t]{1,}|[^\d\s\n\ta-zA-Z]{1,})/,
         ""
       );
-      // this.moduleConfig = Object.assign({}, this.moduleConfig,
-      //  {name:this.moduleConfig.name.replace(/(^[\d]{1,}|[^\da-zA-Z]{1,})/,"")});
     },
 
     // 过滤数学公式符号
@@ -1950,14 +2063,18 @@ export default {
 
   // 生命周期钩子： 创建组件
   created: function() {
-    // if (
-    //   this.nowMode === this.modeOption.detailed &&
-    //   Array.isArray(this.data) &&
-    //   this.data.length > 0 &&
-    //   this.data[0][0]
-    // ) {
-    //   this.modulesData = this.data;
-    // }
+    // 如果当前是以表单组件-明细模式执行，
+    // 则将传入的renderData赋值给formData
+    // 因为以表单组件-明细模式执行时，传入的renderData不会发生变化，
+    // 因此无法触发watch中的赋值操作，所有要在这里手动赋值
+    if (
+      this.nowMode === this.modeOption.detailed &&
+      Array.isArray(this.renderData) &&
+      this.renderData.length > 0 &&
+      this.renderData[0][0]
+    ) {
+      this.modulesData = this.renderData;
+    }
 
     // 表单构建器，只有在渲染模式下才会根据 data 属性渲染表单
     // if (this.nowMode === this.modeOption.render &&  Array.isArray(this.data) &&
@@ -1992,6 +2109,10 @@ export default {
 
     // 更新渲染数据
     renderData: function(newValue, oldValue) {
+      // 清空旧数据
+      this.clearBuilderData();
+
+      // 设置新数据
       this.modulesData = newValue;
     }
   }

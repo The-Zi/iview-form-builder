@@ -24,13 +24,14 @@
 // 表单构建器移动端栅格系统外包围
 .iview-form-builder-grid-mobile {
   width: $mobileBuilderZoonW;
-  margin: 107px 0 0 26px;
-  border: 1px solid #ccc;
+  // margin: 107px 0 0 26px;
+  margin: 50px 0 0 25px;
+  // border: 1px solid #ccc;
 
   position: absolute;
   top: 0%;
   left: 50%;
-  margin-left: -$mobileBgW/2+26;
+  margin-left: -$mobileBgW/2+24;
 }
 
 // 表单行

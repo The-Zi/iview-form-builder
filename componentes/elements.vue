@@ -2,7 +2,7 @@
  * @Author: The-Zi
  * @Date: 2018-06-22 14:15:33
  * @Last Modified by: The-Zi
- * @Last Modified time: 2018-07-18 10:37:32
+ * @Last Modified time: 2018-08-27 16:36:08
  */
 
 
@@ -28,7 +28,8 @@
             <!-- 表单组件 -->
             <RadioGroup v-model="modules.value" @on-change="formDataSync">
               <Radio v-for="(item, index) in modules.itemList" :label="item"
-               :key="modules.name + '-' + index">{{item === 0? "预算内":"预算外"}}</Radio>
+               :key="modules.name + '-' + index">{{ item }}</Radio>
+               <!-- :key="modules.name + '-' + index">{{item == 0? "预算内":"预算外"}}</Radio> -->
             </RadioGroup>
         </FormItem>
 
@@ -76,7 +77,8 @@
 
             <!-- 表单组件 -->
             <Input-number style="width: 100%;" v-model="modules.value" :max="modules.max"
-            :min="modules.min" :placeholder="modules.tips" @on-change="countEvent(modules)">
+            :min="modules.min" :placeholder="modules.tips" @on-change="countEvent(modules)"
+            @keyup.native="($event)=>{inputNumberValClear($event, modules)}">
             </Input-number>
         </FormItem>
 
@@ -104,7 +106,8 @@
 
             <!-- 表单组件 -->
             <Input-number style="width: 100%;" v-model="modules.value" :placeholder="modules.tips"
-            @on-change="convertMoneyFormatEvent(modules)">
+            @on-change="convertMoneyFormatEvent(modules)"
+            @keyup.native="($event)=>{inputNumberValClear($event, modules)}">
             </Input-number>
 
             <!-- 中文大写数字金额 -->
@@ -139,7 +142,9 @@
 
             <!-- 表单组件 -->
             <Input-number style="width: 100%;" v-model="modules.value" :max="modules.max"
-            :min="modules.min" :placeholder="modules.tips" @on-change="convertMoneyFormatEvent(modules)">
+            :min="modules.min" :placeholder="modules.tips"
+            @on-change="convertMoneyFormatEvent(modules)"
+            @keyup.native="($event)=>{inputNumberValClear($event, modules)}">
             </Input-number>
 
             <!-- 中文大写数字金额 -->
@@ -288,6 +293,7 @@
 
             <!-- 表单组件 -->
             <DatePicker v-model="modules.value"
+            style="width: 100%;"
             :editable="false"
             :type="dateFormat({mode: 'date',format: modules.format})"
             :format="dateFormat({mode: 'format',format: modules.format})"
@@ -314,6 +320,7 @@
 
             <!-- 表单组件 -->
             <DatePicker v-model="modules.value"
+            style="width: 100%;"
             :editable="false"
             :type="dateFormat({mode: 'range',format: modules.format})"
             :format="dateFormat({mode: 'format',format: modules.format})"
@@ -406,10 +413,42 @@ export default {
       this.countEvent(params);
     },
 
+    // 清空数字输入框的值
+    inputNumberValClear($event, params){
+        if (!$event.target.value) {
+            // 清空
+            params.value = null;
+            // 计算事件
+            this.countEvent(params);
+        }
+    },
+
+    // 过滤空格
+    filterBlank: function($event, modules) {
+        // if ($event.keyCode >= 48 && $event.keyCode <= 57) {
+        //     console.log("number")
+        // } else {
+        //     console.log("NaN")
+        // }
+        // console.log($event)
+        // console.log(this.config.keyCodes)
+        let val = modules.value.replace(/(^[\0]{2,}|[^\d]{1,}|[^\d\.]{1,}|[\.]{2,})/, "");
+
+        // 值不能超出限制范围
+        if (Number(val) > Number(modules.max)) {
+            modules.value = modules.max;
+        } else if (Number(val) < Number(modules.min)) {
+            modules.value = modules.min;
+        } else {
+            modules.value = val;
+        }
+    },
+
     // 计算事件
     countEvent: function(params) {
       // 自定义事件：计算
-      this.$emit("count", params, this.modeOption.detailed, this.nowRowIndex);
+      this.$emit("count");
+
       // 触发计算事件的同事执行数据同步，主要用于必填项验证
       this.formDataSync();
     },
